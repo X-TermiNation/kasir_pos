@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:async';
-import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import 'package:kasir_pos/View/Login.dart';
 
-
-void main() async{
+void main() async {
   await GetStorage.init();
   runApp(const MyApp());
 }
@@ -42,6 +38,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-

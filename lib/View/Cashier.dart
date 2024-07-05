@@ -149,7 +149,7 @@ class CardButton extends StatelessWidget {
   final VoidCallback onPressed;
   final Widget child;
 
-  CardButton({required this.onPressed, required this.child});
+  const CardButton({required this.onPressed, required this.child});
 
   @override
   Widget build(BuildContext context) {

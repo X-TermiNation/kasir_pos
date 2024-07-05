@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kasir_pos/View/Cashier.dart';
+//import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
+import 'package:kasir_pos/view-model-flutter/user_controller.dart';
+import 'package:kasir_pos/View/tools/custom_toast.dart';
 
 String idcabangglobal = "";
 String emailstr = "";
+
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -19,7 +23,7 @@ class Login extends StatefulWidget {
   State<Login> createState() => _LoginState();
 }
 
-class _LoginState extends State<Login>{
+class _LoginState extends State<Login> {
   TextEditingController email = new TextEditingController();
   TextEditingController password = new TextEditingController();
   @override
@@ -51,6 +55,11 @@ class _LoginState extends State<Login>{
             ),
             TextFormField(
               controller: email,
+              onChanged: (value) {
+                setState(() {
+                  emailstr = value;
+                });
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Field tidak boleh kosong';
@@ -64,31 +73,34 @@ class _LoginState extends State<Login>{
             ),
             TextFormField(
               controller: password,
+              obscureText: true,
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: 'Enter your Password',
+              ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Field tidak boleh kosong';
+                if (value == null) {
+                  showToast(context, 'Field password tidak boleh kosong!');
                 }
                 return null;
               },
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Password',
-              ),
             ),
             FilledButton(
-                onPressed: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Cashier()),
-                  );
-                }
-                ,child: Text("Login")
-            )
+                onPressed: () async {
+                  showToast(context, "akuditekan");
+                  int signcode = await loginbtn(email.text, password.text);
+                  if (signcode == 1) {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => Cashier()));
+                  } else {
+                    showToast(
+                        context, "Username/Password Salah! signcode:$signcode");
+                  }
+                },
+                child: Text("Login"))
           ],
         ),
       ),
-      // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
-
 }
