@@ -3,168 +3,277 @@ import 'package:flutter/material.dart';
 class Cashier extends StatefulWidget {
   const Cashier({super.key});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   @override
   State<Cashier> createState() => _CashierState();
 }
 
 class _CashierState extends State<Cashier> {
-  final List<String> _items = [
-    'Item 1',
-    'Item 2',
-    'Item 3',
-    'Item 4',
-    'Item 5',
-    'Item 6',
-    'Item 7',
-    'Item 8',
-    'Item 9',
-    'Item 10',
-    'Item 11',
-    'Item 12',
-    'Item 13',
-    'Item 14',
-    'Item 15',
-    'Item 16',
-    'Item 17',
-    'Item 18',
-    'Item 19',
-    'Item 20',
-    'Item 21',
-    'Item 22',
-    'Item 23',
-    'Item 24',
-    'Item 25',
+  static const int itemsPerPage = 9;
+  int currentPage = 0;
+
+  List<Item> _items = [
+    Item(name: 'Item 1', price: 10.0),
+    Item(name: 'Item 2', price: 20.0),
+    Item(name: 'Item 3', price: 30.0),
+    Item(name: 'Item 4', price: 40.0),
+    Item(name: 'Item 5', price: 50.0),
+    Item(name: 'Item 6', price: 60.0),
+    Item(name: 'Item 7', price: 70.0),
+    Item(name: 'Item 8', price: 80.0),
+    Item(name: 'Item 9', price: 90.0),
+    Item(name: 'Item 10', price: 100.0),
+    Item(name: 'Item 11', price: 110.0),
+    Item(name: 'Item 12', price: 120.0),
+    Item(name: 'Item 13', price: 130.0),
+    Item(name: 'Item 14', price: 140.0),
+    Item(name: 'Item 15', price: 150.0),
+    Item(name: 'Item 16', price: 160.0),
+    Item(name: 'Item 17', price: 170.0),
+    Item(name: 'Item 18', price: 180.0),
+    Item(name: 'Item 10', price: 100.0),
+    Item(name: 'Item 11', price: 110.0),
+    Item(name: 'Item 12', price: 120.0),
+    Item(name: 'Item 13', price: 130.0),
+    Item(name: 'Item 14', price: 140.0),
+    Item(name: 'Item 15', price: 150.0),
+    Item(name: 'Item 16', price: 160.0),
+    Item(name: 'Item 17', price: 170.0),
+    Item(name: 'Item 18', price: 180.0),
+    Item(name: 'Item 15', price: 150.0),
+    Item(name: 'Item 16', price: 160.0),
+    Item(name: 'Item 17', price: 170.0),
   ];
-  List<String> _cart = [];
-  Map<String, int> _itemCounts = {};
-  List<String> _searchResults = [];
-  String _searchQuery = '';
+
+  List<CartItem> _cartItems = [];
 
   @override
   Widget build(BuildContext context) {
+    int totalPages = (_items.length / itemsPerPage).ceil();
+    List<Item> displayedItems =
+        _items.skip(currentPage * itemsPerPage).take(itemsPerPage).toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('POS Cashier'),
+        title: Text('Point of Sale App'),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: 'Search',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
+          // Left side: List of items
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // List of items
+                  Expanded(
+                    child: GridView.count(
+                      crossAxisCount: 3,
+                      childAspectRatio: 1,
+                      children: displayedItems.map((item) {
+                        return ItemCard(
+                          item: item,
+                          onPressed: () {
+                            setState(() {
+                              CartItem? existingCartItem =
+                                  _cartItems.firstWhere(
+                                (cartItem) => cartItem.item.name == item.name,
+                                orElse: () => CartItem(item: item, quantity: 0),
+                              );
+                              if (existingCartItem.quantity == 0) {
+                                _cartItems
+                                    .add(CartItem(item: item, quantity: 1));
+                              } else {
+                                existingCartItem.quantity += 1;
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  // Page navigation
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.arrow_back),
+                        onPressed: currentPage > 0
+                            ? () {
+                                setState(() {
+                                  currentPage--;
+                                });
+                              }
+                            : null,
+                      ),
+                      Text('Page ${currentPage + 1} of $totalPages'),
+                      IconButton(
+                        icon: Icon(Icons.arrow_forward),
+                        onPressed: currentPage < totalPages - 1
+                            ? () {
+                                setState(() {
+                                  currentPage++;
+                                });
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              onChanged: (query) {
-                setState(() {
-                  _searchQuery = query;
-                  _searchResults = _items
-                      .where((item) => item.toLowerCase().contains(query.toLowerCase()))
-                      .toList();
-                });
-              },
             ),
           ),
+          // Right side: Cart
           Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: GridView.count(
-                    crossAxisCount: 4,
-                    children: (_searchQuery.isEmpty? _items : _searchResults).map((item) {
-                      return CardButton(
-                        onPressed: () {
-                          setState(() {
-                            if (_cart.contains(item)) {
-                              _itemCounts[item] = (_itemCounts[item]?? 0) + 1;
-                            } else {
-                              _cart.add(item);
-                              _itemCounts[item] = 1;
-                            }
-                          });
-                        },
-                        child: Text(item),
-                      );
-                    }).toList(),
+            flex: 3,
+            child: Container(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Cart table
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _cartItems.length,
+                      itemBuilder: (context, index) {
+                        return CartItemRow(
+                          cartItem: _cartItems[index],
+                          onQuantityChanged: (newQuantity) {
+                            setState(() {
+                              if (newQuantity <= 0) {
+                                _cartItems.removeAt(index);
+                              } else {
+                                _cartItems[index].quantity = newQuantity;
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: ListView.builder(
-                    itemCount: _cart.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_cart[index]),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text("${_itemCounts[_cart[index]].toString()}x",style: TextStyle(fontSize: 15),),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () {
-                                setState(() {
-                                  _itemCounts.remove(_cart[index]);
-                                  _cart.remove(_cart[index]);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                  // Total price
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Subtotal:'),
+                        Text(
+                            '\$${_cartItems.fold(0.0, (sum, item) => sum + item.item.price * item.quantity).toStringAsFixed(2)}'),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  // Total price
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total:'),
+                        Text(
+                            '\$${_cartItems.fold(0.0, (sum, item) => sum + item.item.price * item.quantity).toStringAsFixed(2)}'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add your submit logic here
-          print('Submit button pressed');
-        },
-        tooltip: 'Submit',
-        child: Text("Submit"),
       ),
     );
   }
 }
 
+class Item {
+  final String name;
+  final double price;
 
-class CardButton extends StatelessWidget {
+  Item({required this.name, required this.price});
+}
+
+class CartItem {
+  final Item item;
+  int quantity;
+
+  CartItem({required this.item, this.quantity = 1});
+}
+
+class ItemCard extends StatelessWidget {
+  final Item item;
   final VoidCallback onPressed;
-  final Widget child;
 
-  const CardButton({required this.onPressed, required this.child});
+  ItemCard({required this.item, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
       child: InkWell(
         onTap: onPressed,
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: child,
+          padding: const EdgeInsets.all(5.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(item.name),
+              Text('\$${item.price}'),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class CartItemRow extends StatelessWidget {
+  final CartItem cartItem;
+  final ValueChanged<int> onQuantityChanged;
+
+  CartItemRow({required this.cartItem, required this.onQuantityChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(cartItem.item.name),
+        QuantityWidget(
+          quantity: cartItem.quantity,
+          onQuantityChanged: onQuantityChanged,
+        ),
+        Text(
+            '\$${(cartItem.item.price * cartItem.quantity).toStringAsFixed(2)}'),
+      ],
+    );
+  }
+}
+
+class QuantityWidget extends StatelessWidget {
+  final int quantity;
+  final ValueChanged<int> onQuantityChanged;
+
+  QuantityWidget({required this.quantity, required this.onQuantityChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(Icons.remove),
+          onPressed: () {
+            if (quantity > 1) {
+              onQuantityChanged(quantity - 1);
+            } else {
+              onQuantityChanged(0);
+            }
+          },
+        ),
+        Text('$quantity'),
+        IconButton(
+          icon: Icon(Icons.add),
+          onPressed: () {
+            onQuantityChanged(quantity + 1);
+          },
+        ),
+      ],
     );
   }
 }

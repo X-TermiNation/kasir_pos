@@ -87,7 +87,6 @@ class _LoginState extends State<Login> {
             ),
             FilledButton(
                 onPressed: () async {
-                  showToast(context, "akuditekan");
                   int signcode = await loginbtn(email.text, password.text);
                   if (signcode == 1) {
                     Navigator.push(context,
