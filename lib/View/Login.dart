@@ -88,6 +88,11 @@ class _LoginState extends State<Login> {
             FilledButton(
                 onPressed: () async {
                   int signcode = await loginbtn(email.text, password.text);
+                  setState(() {
+                    email.text = "";
+                    password.text = "";
+                    emailstr = "";
+                  });
                   if (signcode == 1) {
                     Navigator.push(context,
                         MaterialPageRoute(builder: (context) => Cashier()));
