@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart'; // Import the intl package for NumberFormat
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
+import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 
 final dataStorage = GetStorage();
 String id_gudangs = dataStorage.read('id_gudang');
@@ -26,6 +27,11 @@ class _CashierState extends State<Cashier> {
   @override
   void initState() {
     super.initState();
+    barangdata.then((value) {
+      setState(() {
+        _items = value.map((item) => Barang.fromJson(item)).toList();
+      });
+    });
   }
 
   void _handleItemPressed(List<Map<String, dynamic>> satuanData, Barang item) {
@@ -45,7 +51,7 @@ class _CashierState extends State<Cashier> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return FutureBuilder<List<Map<String, dynamic>>>(
       future: barangdata,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -303,11 +309,28 @@ class CartItemRow extends StatefulWidget {
 
 class _CartItemRowState extends State<CartItemRow> {
   late Map<String, dynamic> _selectedSatuan;
+  List<Map<String, dynamic>> _diskonList = [];
+  Map<String, dynamic>? _selectedDiskon;
 
   @override
   void initState() {
     super.initState();
     _selectedSatuan = widget.satuanData.isNotEmpty ? widget.satuanData[0] : {};
+    fetchDiskonList();
+  }
+
+  void fetchDiskonList() async {
+    try {
+      List<Map<String, dynamic>> diskonData =
+          await getDiskonbyBarang(widget.cartItem.item.id);
+      setState(() {
+        _diskonList = diskonData;
+        _selectedDiskon = _diskonList.isNotEmpty ? _diskonList[0] : null;
+      });
+    } catch (e) {
+      print('Error fetching discounts: $e');
+      // Handle error if necessary
+    }
   }
 
   @override
@@ -317,16 +340,18 @@ class _CartItemRowState extends State<CartItemRow> {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Text(
                   widget.cartItem.item.nama_barang,
                   style: TextStyle(fontSize: 18.0),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Expanded(
+              Flexible(
+                flex: 2,
                 child: QuantityWidget(
                   quantity: widget.cartItem.quantity,
                   onQuantityChanged: widget.onQuantityChanged,
@@ -346,15 +371,57 @@ class _CartItemRowState extends State<CartItemRow> {
                   iconSize: 20.0,
                   icon: Icon(Icons.arrow_drop_down),
                   style: TextStyle(fontSize: 16.0),
+                  isExpanded: true,
                   items: widget.satuanData.map((satuan) {
                     return DropdownMenuItem<Map<String, dynamic>>(
                       value: satuan,
                       child: Text(
                         '${satuan['nama_satuan']}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         style: TextStyle(color: Colors.black),
                       ),
                     );
                   }).toList(),
+                ),
+              ),
+              SizedBox(
+                width: 5,
+              ),
+              Expanded(
+                flex: 2,
+                child: DropdownButton<Map<String, dynamic>>(
+                  value: _selectedDiskon,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedDiskon = newValue;
+                      // Handle selection logic if needed
+                    });
+                  },
+                  iconSize: 20.0,
+                  icon: Icon(Icons.arrow_drop_down),
+                  style: TextStyle(fontSize: 16.0),
+                  isExpanded: true,
+                  items: [
+                    DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        'No Discount',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    ..._diskonList.map((diskon) {
+                      return DropdownMenuItem<Map<String, dynamic>>(
+                        value: diskon,
+                        child: Text(
+                          '${diskon['nama_diskon']}',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(color: Colors.black),
+                        ),
+                      );
+                    }).toList(),
+                  ],
                 ),
               ),
             ],
@@ -362,21 +429,60 @@ class _CartItemRowState extends State<CartItemRow> {
           if (_selectedSatuan.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Text(
-                    'Price per unit: \Rp.${NumberFormat('#,###.00', 'id_ID').format(_selectedSatuan['harga_satuan'] ?? 0.0)}',
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Price per unit: \Rp.${NumberFormat('#,###.00', 'id_ID').format(_selectedSatuan['harga_satuan'] ?? 0.0)}',
+                      ),
+                      _selectedDiskon == null
+                          ? Text(
+                              'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateTotalWithoutDiscount())}',
+                            )
+                          : Text(
+                              '\Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateTotalWithoutDiscount())}',
+                              style: TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            )
+                    ],
                   ),
-                  Text(
-                    'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format((_selectedSatuan['harga_satuan'] ?? 0.0) * widget.cartItem.quantity)}',
-                  ),
+                  if (_selectedDiskon != null)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Diskon (${_selectedDiskon!['nama_diskon']}): ${_selectedDiskon!['persentase_diskon']}%',
+                        ),
+                        Text(
+                          'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateTotalDiscount())}',
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
         ],
       ),
     );
+  }
+
+  double _calculateTotalWithoutDiscount() {
+    double hargaSatuan = (_selectedSatuan['harga_satuan'] ?? 0.0).toDouble();
+    return hargaSatuan * widget.cartItem.quantity;
+  }
+
+  double _calculateTotalDiscount() {
+    if (_selectedDiskon != null) {
+      double total = _calculateTotalWithoutDiscount();
+      double discountPercentage =
+          (_selectedDiskon!['persentase_diskon'] ?? 0) / 100;
+      double discountAmount = total - (total * discountPercentage);
+      return discountAmount;
+    }
+    return 0.0;
   }
 }
 
