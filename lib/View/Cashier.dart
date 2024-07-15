@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:intl/intl.dart'; // Import the intl package for NumberFormat
+import 'package:intl/intl.dart';
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 
 final dataStorage = GetStorage();
-String id_gudangs = dataStorage.read('id_gudang');
-
+String id_gudang = dataStorage.read('id_gudang');
+double subtotal = 0;
+double total = 0;
 var barangdata =
-    Future.delayed(Duration(seconds: 1), () => getBarang(id_gudangs));
+    Future.delayed(Duration(seconds: 1), () => getBarang(id_gudang));
 
 class Cashier extends StatefulWidget {
   const Cashier({Key? key}) : super(key: key);
@@ -38,14 +39,21 @@ class _CashierState extends State<Cashier> {
     setState(() {
       CartItem? existingCartItem = _cartItems.firstWhere(
         (cartItem) => cartItem.item.nama_barang == item.nama_barang,
-        orElse: () => CartItem(item: item, quantity: 0, selectedSatuan: {}),
+        orElse: () => CartItem(
+          item: item,
+          quantity: 0,
+          selectedSatuan: satuanData[0],
+          priceWithoutDiscount: (satuanData[0]['harga_satuan'] ?? 0).toDouble(),
+        ),
       );
       if (existingCartItem.quantity == 0) {
-        _cartItems.add(CartItem(item: item, quantity: 1, selectedSatuan: {}));
+        _cartItems.add(existingCartItem);
         _satuanDataList.add(satuanData);
+        existingCartItem.quantity = 1;
       } else {
         existingCartItem.quantity += 1;
       }
+      _updateSubtotal();
     });
   }
 
@@ -93,6 +101,8 @@ class _CashierState extends State<Cashier> {
                                   List<Map<String, dynamic>> satuanData =
                                       await getsatuan(item.id, context);
                                   _handleItemPressed(satuanData, item);
+
+                                  _updateSubtotal();
                                 },
                               );
                             }).toList(),
@@ -153,6 +163,7 @@ class _CashierState extends State<Cashier> {
                                     } else {
                                       _cartItems[index].quantity = newQuantity;
                                     }
+                                    _updateSubtotal();
                                   });
                                 },
                               );
@@ -167,7 +178,7 @@ class _CashierState extends State<Cashier> {
                             children: [
                               Text('Subtotal:'),
                               Text(
-                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateSubtotal())}',
+                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal)}',
                               ),
                             ],
                           ),
@@ -180,7 +191,7 @@ class _CashierState extends State<Cashier> {
                             children: [
                               Text('Tax (11%):'),
                               Text(
-                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateSubtotal() * (11 / 100))}',
+                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal * (11 / 100))}',
                               ),
                             ],
                           ),
@@ -193,7 +204,7 @@ class _CashierState extends State<Cashier> {
                             children: [
                               Text('Total:'),
                               Text(
-                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateTotal() + _calculateSubtotal() * (11 / 100))}',
+                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(total)}',
                               ),
                             ],
                           ),
@@ -203,11 +214,12 @@ class _CashierState extends State<Cashier> {
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: FilledButton(
-                                onPressed: () {},
-                                child: Text(
-                                  "Pay",
-                                  style: TextStyle(fontSize: 20),
-                                )),
+                              onPressed: () {},
+                              child: Text(
+                                "Pay",
+                                style: TextStyle(fontSize: 20),
+                              ),
+                            ),
                           ),
                         )
                       ],
@@ -224,22 +236,27 @@ class _CashierState extends State<Cashier> {
 
   double _calculateSubtotal() {
     double subtotal = 0.0;
-    for (int i = 0; i < _cartItems.length; i++) {
-      CartItem cartItem = _cartItems[i];
-      Map<String, dynamic> selectedSatuan = _satuanDataList[i].firstWhere(
-        (satuan) =>
-            satuan['nama_satuan'] == cartItem.selectedSatuan['nama_satuan'],
-        orElse: () => {},
-      );
-      double hargaSatuan = (selectedSatuan['harga_satuan'] ?? 0).toDouble();
-      subtotal += hargaSatuan * cartItem.quantity;
+    for (CartItem cartItem in _cartItems) {
+      if (cartItem.priceWithDiscount != null) {
+        subtotal += cartItem.priceWithDiscount!;
+      } else {
+        subtotal += cartItem.priceWithoutDiscount;
+      }
     }
     return subtotal;
   }
 
   double _calculateTotal() {
     // For now, total is the same as subtotal
-    return _calculateSubtotal();
+    double totals = _calculateSubtotal() + _calculateSubtotal() * (11 / 100);
+    return totals;
+  }
+
+  void _updateSubtotal() {
+    setState(() {
+      subtotal = _calculateSubtotal();
+      total = _calculateTotal();
+    });
   }
 }
 
@@ -257,11 +274,15 @@ class CartItem {
   final Barang item;
   int quantity;
   Map<String, dynamic> selectedSatuan;
+  double priceWithoutDiscount;
+  double? priceWithDiscount;
 
   CartItem({
     required this.item,
     this.quantity = 1,
     required this.selectedSatuan,
+    required this.priceWithoutDiscount,
+    this.priceWithDiscount,
   });
 }
 
@@ -282,7 +303,6 @@ class ItemCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(item.nama_barang),
-              // Text('\$${item.harga.toStringAsFixed(2)}'),
             ],
           ),
         ),
@@ -325,12 +345,25 @@ class _CartItemRowState extends State<CartItemRow> {
           await getDiskonbyBarang(widget.cartItem.item.id);
       setState(() {
         _diskonList = diskonData;
-        _selectedDiskon = _diskonList.isNotEmpty ? _diskonList[0] : null;
+        _selectedDiskon = null;
+        _updatePrices();
       });
     } catch (e) {
       print('Error fetching discounts: $e');
       // Handle error if necessary
     }
+  }
+
+  void _updatePrices() {
+    setState(() {
+      widget.cartItem.priceWithoutDiscount = _calculateTotalWithoutDiscount();
+      if (_selectedDiskon != null) {
+        widget.cartItem.priceWithDiscount = _calculateTotalDiscount();
+      } else {
+        widget.cartItem.priceWithDiscount = null;
+      }
+      widget.onQuantityChanged(widget.cartItem.quantity);
+    });
   }
 
   @override
@@ -354,7 +387,16 @@ class _CartItemRowState extends State<CartItemRow> {
                 flex: 2,
                 child: QuantityWidget(
                   quantity: widget.cartItem.quantity,
-                  onQuantityChanged: widget.onQuantityChanged,
+                  onQuantityChanged: (newQuantity) {
+                    setState(() {
+                      if (newQuantity <= 0) {
+                        widget.onQuantityChanged(0);
+                      } else {
+                        widget.cartItem.quantity = newQuantity;
+                        _updatePrices();
+                      }
+                    });
+                  },
                 ),
               ),
               Expanded(
@@ -365,7 +407,7 @@ class _CartItemRowState extends State<CartItemRow> {
                     setState(() {
                       _selectedSatuan = newValue!;
                       widget.cartItem.selectedSatuan = newValue;
-                      widget.onQuantityChanged(widget.cartItem.quantity);
+                      _updatePrices();
                     });
                   },
                   iconSize: 20.0,
@@ -395,7 +437,7 @@ class _CartItemRowState extends State<CartItemRow> {
                   onChanged: (newValue) {
                     setState(() {
                       _selectedDiskon = newValue;
-                      // Handle selection logic if needed
+                      _updatePrices();
                     });
                   },
                   iconSize: 20.0,
@@ -454,7 +496,7 @@ class _CartItemRowState extends State<CartItemRow> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Diskon (${_selectedDiskon!['nama_diskon']}): ${_selectedDiskon!['persentase_diskon']}%',
+                          'Discount (${_selectedDiskon!['nama_diskon']}): ${_selectedDiskon!['persentase_diskon']}%',
                         ),
                         Text(
                           'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(_calculateTotalDiscount())}',
