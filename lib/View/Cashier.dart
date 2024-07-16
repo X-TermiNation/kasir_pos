@@ -35,24 +35,37 @@ class _CashierState extends State<Cashier> {
     });
   }
 
-  void _handleItemPressed(List<Map<String, dynamic>> satuanData, Barang item) {
+  void _handleItemPressed(
+      List<Map<String, dynamic>> satuanData, Barang item, int satuanIndex) {
     setState(() {
       CartItem? existingCartItem = _cartItems.firstWhere(
         (cartItem) => cartItem.item.nama_barang == item.nama_barang,
         orElse: () => CartItem(
           item: item,
           quantity: 0,
-          selectedSatuan: satuanData[0],
-          priceWithoutDiscount: (satuanData[0]['harga_satuan'] ?? 0).toDouble(),
+          selectedSatuan: satuanData[satuanIndex], // Use satuanIndex here
+          priceWithoutDiscount:
+              (satuanData[satuanIndex]['harga_satuan'] ?? 0).toDouble(),
         ),
       );
+
       if (existingCartItem.quantity == 0) {
+        existingCartItem.quantity = 1;
         _cartItems.add(existingCartItem);
         _satuanDataList.add(satuanData);
-        existingCartItem.quantity = 1;
       } else {
-        existingCartItem.quantity += 1;
+        int currentQuantity = existingCartItem.quantity;
+        int maxQuantity = satuanData[satuanIndex]['jumlah_satuan'] ?? 0;
+
+        if (currentQuantity < maxQuantity) {
+          existingCartItem.quantity += 1;
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Batas Stok Tercapai!')),
+          );
+        }
       }
+
       _updateSubtotal();
     });
   }
@@ -94,14 +107,19 @@ class _CashierState extends State<Cashier> {
                           child: GridView.count(
                             crossAxisCount: 3,
                             childAspectRatio: 1,
-                            children: displayedItems.map((item) {
+                            children:
+                                displayedItems.asMap().entries.map((entry) {
+                              int index = entry.key;
+                              Barang item = entry.value;
                               return ItemCard(
                                 item: item,
+                                satuanIndex:
+                                    index, // Pass the index to ItemCard
                                 onPressed: () async {
                                   List<Map<String, dynamic>> satuanData =
                                       await getsatuan(item.id, context);
-                                  _handleItemPressed(satuanData, item);
-
+                                  _handleItemPressed(satuanData, item,
+                                      index); // Pass index to _handleItemPressed
                                   _updateSubtotal();
                                 },
                               );
@@ -214,7 +232,9 @@ class _CashierState extends State<Cashier> {
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: FilledButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                _showPaymentDialog(context);
+                              },
                               child: Text(
                                 "Pay",
                                 style: TextStyle(fontSize: 20),
@@ -258,6 +278,142 @@ class _CashierState extends State<Cashier> {
       total = _calculateTotal();
     });
   }
+
+  void _clearCart() {
+    setState(() {
+      _cartItems.clear();
+      _satuanDataList.clear();
+      _updateSubtotal();
+    });
+  }
+
+  void _showPaymentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return PaymentDialog(
+          total: total,
+          onClearCart: _clearCart,
+        );
+      },
+    );
+  }
+}
+
+class PaymentDialog extends StatefulWidget {
+  final double total;
+  final VoidCallback onClearCart;
+
+  PaymentDialog({required this.total, required this.onClearCart});
+
+  @override
+  _PaymentDialogState createState() => _PaymentDialogState();
+}
+
+class _PaymentDialogState extends State<PaymentDialog> {
+  String _selectedPaymentMethod = 'QRIS';
+  bool _isDelivery = false;
+  TextEditingController _noteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteController.dispose(); // Dispose controller when done
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Confirm Payment'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+              'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}'),
+          SizedBox(height: 20),
+          Text('Select Payment Method:'),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedPaymentMethod = 'QRIS';
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedPaymentMethod == 'QRIS'
+                        ? Colors.blue
+                        : Colors.grey,
+                  ),
+                  child: Text('QRIS'),
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedPaymentMethod = 'Cash';
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedPaymentMethod == 'Cash'
+                        ? Colors.blue
+                        : Colors.grey,
+                  ),
+                  child: Text('Cash'),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          CheckboxListTile(
+            title: Text('Delivery'),
+            value: _isDelivery,
+            onChanged: (bool? value) {
+              setState(() {
+                _isDelivery = value ?? false;
+              });
+            },
+          ),
+          Expanded(
+            child: TextField(
+              controller: _noteController,
+              maxLines: null, // Allows multiple lines
+              decoration: InputDecoration(
+                labelText: 'Additional Notes',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          )
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            // Handle payment confirmation
+            Navigator.of(context).pop();
+            _confirmPayment();
+            widget.onClearCart();
+          },
+          child: Text('Confirm Payment'),
+        ),
+      ],
+    );
+  }
+
+  void _confirmPayment() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Payment Confirmed!')),
+    );
+  }
 }
 
 class Barang {
@@ -289,8 +445,10 @@ class CartItem {
 class ItemCard extends StatelessWidget {
   final Barang item;
   final VoidCallback onPressed;
+  final int satuanIndex;
 
-  ItemCard({required this.item, required this.onPressed});
+  ItemCard(
+      {required this.item, required this.onPressed, required this.satuanIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +508,6 @@ class _CartItemRowState extends State<CartItemRow> {
       });
     } catch (e) {
       print('Error fetching discounts: $e');
-      // Handle error if necessary
     }
   }
 
@@ -387,6 +544,8 @@ class _CartItemRowState extends State<CartItemRow> {
                 flex: 2,
                 child: QuantityWidget(
                   quantity: widget.cartItem.quantity,
+                  jumlahSatuan:
+                      widget.cartItem.selectedSatuan['jumlah_satuan'] ?? 0,
                   onQuantityChanged: (newQuantity) {
                     setState(() {
                       if (newQuantity <= 0) {
@@ -407,6 +566,7 @@ class _CartItemRowState extends State<CartItemRow> {
                     setState(() {
                       _selectedSatuan = newValue!;
                       widget.cartItem.selectedSatuan = newValue;
+                      widget.cartItem.quantity = 1; // Reset quantity to 1
                       _updatePrices();
                     });
                   },
@@ -530,32 +690,51 @@ class _CartItemRowState extends State<CartItemRow> {
 
 class QuantityWidget extends StatelessWidget {
   final int quantity;
+  final int jumlahSatuan;
   final ValueChanged<int> onQuantityChanged;
 
-  QuantityWidget({required this.quantity, required this.onQuantityChanged});
+  QuantityWidget({
+    required this.quantity,
+    required this.jumlahSatuan,
+    required this.onQuantityChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        IconButton(
-          icon: Icon(Icons.remove),
-          onPressed: () {
-            if (quantity > 1) {
-              onQuantityChanged(quantity - 1);
-            } else {
-              onQuantityChanged(0);
-            }
-          },
-        ),
-        Text(quantity.toString()),
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: () {
-            onQuantityChanged(quantity + 1);
-          },
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: Icon(Icons.remove),
+                onPressed: () {
+                  if (quantity > 1) {
+                    onQuantityChanged(quantity - 1);
+                  }
+                },
+              ),
+              Text(quantity.toString()),
+              IconButton(
+                icon: Icon(Icons.add),
+                onPressed: () {
+                  if (quantity < jumlahSatuan) {
+                    onQuantityChanged(quantity + 1);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Batas Stok Tercapai!')),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          Text('Stock: $jumlahSatuan'),
+        ],
+      ),
     );
   }
 }
