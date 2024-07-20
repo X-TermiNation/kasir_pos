@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:kasir_pos/View/checkout.dart';
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 
@@ -233,10 +234,17 @@ class _CashierState extends State<Cashier> {
                             alignment: Alignment.centerRight,
                             child: FilledButton(
                               onPressed: () {
-                                _showPaymentDialog(context);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => PaymentDialog(
+                                              total: total,
+                                              onClearCart: _clearCart,
+                                              cartItems: _cartItems,
+                                            )));
                               },
                               child: Text(
-                                "Pay",
+                                "CheckOut",
                                 style: TextStyle(fontSize: 20),
                               ),
                             ),
@@ -285,134 +293,6 @@ class _CashierState extends State<Cashier> {
       _satuanDataList.clear();
       _updateSubtotal();
     });
-  }
-
-  void _showPaymentDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return PaymentDialog(
-          total: total,
-          onClearCart: _clearCart,
-        );
-      },
-    );
-  }
-}
-
-class PaymentDialog extends StatefulWidget {
-  final double total;
-  final VoidCallback onClearCart;
-
-  PaymentDialog({required this.total, required this.onClearCart});
-
-  @override
-  _PaymentDialogState createState() => _PaymentDialogState();
-}
-
-class _PaymentDialogState extends State<PaymentDialog> {
-  String _selectedPaymentMethod = 'QRIS';
-  bool _isDelivery = false;
-  TextEditingController _noteController = TextEditingController();
-
-  @override
-  void dispose() {
-    _noteController.dispose(); // Dispose controller when done
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Confirm Payment'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-              'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}'),
-          SizedBox(height: 20),
-          Text('Select Payment Method:'),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPaymentMethod = 'QRIS';
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedPaymentMethod == 'QRIS'
-                        ? Colors.blue
-                        : Colors.grey,
-                  ),
-                  child: Text('QRIS'),
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPaymentMethod = 'Cash';
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedPaymentMethod == 'Cash'
-                        ? Colors.blue
-                        : Colors.grey,
-                  ),
-                  child: Text('Cash'),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-          CheckboxListTile(
-            title: Text('Delivery'),
-            value: _isDelivery,
-            onChanged: (bool? value) {
-              setState(() {
-                _isDelivery = value ?? false;
-              });
-            },
-          ),
-          Expanded(
-            child: TextField(
-              controller: _noteController,
-              maxLines: null, // Allows multiple lines
-              decoration: InputDecoration(
-                labelText: 'Additional Notes',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          )
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // Handle payment confirmation
-            Navigator.of(context).pop();
-            _confirmPayment();
-            widget.onClearCart();
-          },
-          child: Text('Confirm Payment'),
-        ),
-      ],
-    );
-  }
-
-  void _confirmPayment() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Payment Confirmed!')),
-    );
   }
 }
 

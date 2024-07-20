@@ -403,6 +403,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
+  qr:
+    dependency: "direct main"
+    description:
+      name: qr
+      sha256: "5c4208b4dc0d55c3184d10d83ee0ded6212dc2b5e2ba17c5a0c0aab279128d21"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   rational:
     dependency: transitive
     description:
