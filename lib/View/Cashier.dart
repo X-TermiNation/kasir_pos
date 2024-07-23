@@ -312,14 +312,15 @@ class CartItem {
   Map<String, dynamic> selectedSatuan;
   double priceWithoutDiscount;
   double? priceWithDiscount;
+  int? discountpercentage;
 
-  CartItem({
-    required this.item,
-    this.quantity = 1,
-    required this.selectedSatuan,
-    required this.priceWithoutDiscount,
-    this.priceWithDiscount,
-  });
+  CartItem(
+      {required this.item,
+      this.quantity = 1,
+      required this.selectedSatuan,
+      required this.priceWithoutDiscount,
+      this.priceWithDiscount,
+      this.discountpercentage});
 }
 
 class ItemCard extends StatelessWidget {
@@ -396,6 +397,8 @@ class _CartItemRowState extends State<CartItemRow> {
       widget.cartItem.priceWithoutDiscount = _calculateTotalWithoutDiscount();
       if (_selectedDiskon != null) {
         widget.cartItem.priceWithDiscount = _calculateTotalDiscount();
+        widget.cartItem.discountpercentage =
+            _selectedDiskon!['persentase_diskon'];
       } else {
         widget.cartItem.priceWithDiscount = null;
       }

@@ -1,33 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:kasir_pos/View/Cashier.dart';
 import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:qr/qr.dart';
 import 'dart:typed_data';
-
-import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:qr/qr.dart';
 
 Future<Uint8List> generateQrImage(String data) async {
-  // Create a QR Code instance
   final qr = QrCode(4, QrErrorCorrectLevel.L);
   qr.addData(data);
   qr.make();
 
-  final qrCodeSize = 200.0; // Adjust size as needed
+  final qrCodeSize = 200.0;
   final size = qrCodeSize.toInt();
 
-  // Create a picture recorder and canvas to draw the QR code
   final pictureRecorder = ui.PictureRecorder();
   final canvas = Canvas(pictureRecorder,
       Rect.fromPoints(Offset(0, 0), Offset(size.toDouble(), size.toDouble())));
 
   final paint = Paint()..color = Colors.black;
 
-  // Draw the QR code on the canvas
   for (var x = 0; x < qr.moduleCount; x++) {
     for (var y = 0; y < qr.moduleCount; y++) {
       if (qr.isDark(y, x)) {
@@ -42,8 +34,6 @@ Future<Uint8List> generateQrImage(String data) async {
       }
     }
   }
-
-  // Convert the canvas to a PNG image
   final img = await pictureRecorder.endRecording().toImage(size, size);
   final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
   return byteData!.buffer.asUint8List();
@@ -70,6 +60,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
   TextEditingController _noteController = TextEditingController();
   String? qrCodeUrl;
   bool _isLoading = true;
+  List<Map<String, dynamic>> data_item = [];
+  String status = "Confirmed";
   @override
   void dispose() {
     _noteController.dispose(); // Dispose controller when done
@@ -82,6 +74,29 @@ class _PaymentDialogState extends State<PaymentDialog> {
     if (_selectedPaymentMethod == 'QRIS') {
       _fetchQRCodeUrl();
     }
+    data_item = getCartData(widget.cartItems, widget.total);
+  }
+
+  List<Map<String, dynamic>> getCartData(
+      List<CartItem> cartItems, double total) {
+    List<Map<String, dynamic>> dataItem = [];
+
+    for (var cartItem in cartItems) {
+      Map<String, dynamic> dataTemp = {
+        'id_reference': cartItem.item.id,
+        'nama_barang': cartItem.item.nama_barang,
+        'id_satuan': cartItem.selectedSatuan['_id'].toString(),
+        'satuan_price': cartItem.selectedSatuan['harga_satuan'],
+        'trans_qty': cartItem.quantity,
+        'persentase_diskon': cartItem.discountpercentage ?? 0,
+        'total_price':
+            cartItem.priceWithDiscount ?? cartItem.priceWithoutDiscount,
+      };
+
+      dataItem.add(dataTemp);
+    }
+
+    return dataItem;
   }
 
   Future<void> _fetchQRCodeUrl() async {
@@ -111,8 +126,37 @@ class _PaymentDialogState extends State<PaymentDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-                'Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}'),
+            Text('Cart Items:'),
+            Container(
+              height: 200, // Adjust as needed
+              child: ListView.builder(
+                itemCount: widget.cartItems.length,
+                itemBuilder: (context, index) {
+                  final item = widget.cartItems[index];
+                  return ListTile(
+                    title: Text(item.item.nama_barang),
+                    subtitle: item.priceWithDiscount != null
+                        ? Text(
+                            'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}      Diskon:${item.discountpercentage}%')
+                        : Text(
+                            'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}'),
+                    trailing: Text('Qty: ${item.quantity}'),
+                  );
+                },
+              ),
+            ),
+            Text.rich(
+              TextSpan(
+                text: 'Total: ',
+                children: [
+                  TextSpan(
+                    text:
+                        '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(height: 20),
             Text('Select Payment Method:'),
             Row(
@@ -190,6 +234,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
               onChanged: (bool? value) {
                 setState(() {
                   _isDelivery = value ?? false;
+                  if (_isDelivery) {
+                    status = "Pending";
+                  } else {
+                    status = "Confirmed";
+                  }
                 });
               },
             ),
@@ -209,7 +258,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                 _confirmPayment();
                 widget.onClearCart();
               },
-              child: Text('Confirm Payment'),
+              child: Text('Pay'),
             ),
           ],
         ),
@@ -218,8 +267,10 @@ class _PaymentDialogState extends State<PaymentDialog> {
   }
 
   void _confirmPayment() async {
+    await addTrans(_selectedPaymentMethod, _isDelivery, _noteController.text,
+        data_item, status, context);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Payment Confirmed!')),
+      SnackBar(content: Text('Pay Confirmed!')),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:http/http.dart' as http;
+import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'dart:async';
 
@@ -19,7 +20,6 @@ Future<String?> createqris(int amount, BuildContext context) async {
     final responseData = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      showToast(context, 'Berhasil menampilkan QR');
       return responseData['qrCodeUrl'];
     } else {
       showToast(context, "Gagal menampilkan QR");
@@ -58,4 +58,46 @@ void createInvoice(String external_id, int amount, String payer_email,
     showToast(context, "Error: $error");
     print('Exception during HTTP request: $error');
   }
+}
+
+Future<Map<String, dynamic>?> addTrans(
+  String payment_method,
+  bool delivery,
+  String desc,
+  List<Map<String, dynamic>> items,
+  String status,
+  BuildContext context,
+) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  DateTime trans_date = DateTime.now();
+  try {
+    final transData = {
+      'id_cabang': id_cabang,
+      'trans_date':
+          trans_date.toIso8601String(), // Ensure date is properly formatted
+      'payment_method': payment_method,
+      'delivery': delivery,
+      'desc': desc,
+      'status': status,
+      'Items': items
+    };
+    final url = 'http://10.0.2.2:3001/transaksi/addtrans/$id_cabang';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(transData),
+    );
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+      return transData;
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+  return null; // Return null in case of an error
 }
