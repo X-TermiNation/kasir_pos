@@ -257,6 +257,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
               onPressed: () {
                 _confirmPayment();
                 widget.onClearCart();
+                Navigator.pop(context);
               },
               child: Text('Pay'),
             ),

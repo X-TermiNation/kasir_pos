@@ -595,9 +595,9 @@ class QuantityWidget extends StatelessWidget {
               IconButton(
                 icon: Icon(Icons.remove),
                 onPressed: () {
-                  if (quantity > 1) {
+                  if (quantity >= 1) {
                     onQuantityChanged(quantity - 1);
-                  }
+                  } else {}
                 },
               ),
               Text(quantity.toString()),
