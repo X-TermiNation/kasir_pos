@@ -44,9 +44,8 @@ class _CashierState extends State<Cashier> {
         orElse: () => CartItem(
           item: item,
           quantity: 0,
-          selectedSatuan: satuanData[satuanIndex], // Use satuanIndex here
-          priceWithoutDiscount:
-              (satuanData[satuanIndex]['harga_satuan'] ?? 0).toDouble(),
+          selectedSatuan: satuanData[0], // Use satuanIndex here
+          priceWithoutDiscount: (satuanData[0]['harga_satuan'] ?? 0).toDouble(),
         ),
       );
 

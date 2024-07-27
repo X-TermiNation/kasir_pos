@@ -101,3 +101,38 @@ Future<Map<String, dynamic>?> addTrans(
   }
   return null; // Return null in case of an error
 }
+
+//cetak invoice
+Future<void> generateInvoice(
+  String nama_cabang,
+  String alamat,
+  String no_telp,
+  DateTime date_trans,
+  String payment_method,
+  String delivery, //true = yes , false = no
+  List<Map<String, dynamic>> items,
+) async {
+  final response = await http.post(
+    Uri.parse('http://10.0.2.2:3000/invoice/generate-invoice'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, dynamic>{
+      'nama_cabang': nama_cabang,
+      'alamat': alamat,
+      'no_telp': no_telp,
+      'date_trans': date_trans,
+      'payment_method': payment_method,
+      'delivery': delivery,
+      'items': items,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    // Handle successful response
+    // You can download and view the PDF using a PDF viewer package
+    print('Invoice generated successfully');
+  } else {
+    throw Exception('Failed to generate invoice');
+  }
+}

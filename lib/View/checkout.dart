@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kasir_pos/View/Cashier.dart';
 import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:qr/qr.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -62,11 +63,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
   bool _isLoading = true;
   List<Map<String, dynamic>> data_item = [];
   String status = "Confirmed";
-  @override
-  void dispose() {
-    _noteController.dispose(); // Dispose controller when done
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -257,7 +253,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
               onPressed: () {
                 _confirmPayment();
                 widget.onClearCart();
-                Navigator.pop(context);
               },
               child: Text('Pay'),
             ),
@@ -270,8 +265,45 @@ class _PaymentDialogState extends State<PaymentDialog> {
   void _confirmPayment() async {
     await addTrans(_selectedPaymentMethod, _isDelivery, _noteController.text,
         data_item, status, context);
+    _showInvoiceDialog(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Pay Confirmed!')),
+    );
+    _noteController.text = "";
+  }
+
+  void _showInvoiceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Payment Successful!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SpinKitFadingCircle(color: Colors.blue, size: 50.0),
+              SizedBox(height: 20),
+              Text('Your payment has been confirmed.'),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // Function blank for the download invoice button
+                },
+                child: Text('Download Invoice'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pop(context);
+                },
+                child: Text('Continue'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
