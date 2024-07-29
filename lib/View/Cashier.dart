@@ -233,14 +233,22 @@ class _CashierState extends State<Cashier> {
                             alignment: Alignment.centerRight,
                             child: FilledButton(
                               onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => PaymentDialog(
-                                              total: total,
-                                              onClearCart: _clearCart,
-                                              cartItems: _cartItems,
-                                            )));
+                                if (_cartItems.isNotEmpty) {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => PaymentDialog(
+                                                total: total,
+                                                onClearCart: _clearCart,
+                                                cartItems: _cartItems,
+                                              )));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Warning: Cart tidak boleh kosong!')),
+                                  );
+                                }
                               },
                               child: Text(
                                 "CheckOut",

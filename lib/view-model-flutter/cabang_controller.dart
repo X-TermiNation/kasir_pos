@@ -53,3 +53,17 @@ Future<String> getdatacabang(String email) async {
     throw Exception('Error fetching user: $errorMessage');
   }
 }
+
+Future<List<Map<String, dynamic>>> getdatacabangByID(String id) async {
+  final url = 'http://10.0.2.2:3001/cabang/caricabangbyID/$id';
+  final response = await http.get(Uri.parse(url));
+
+  if (response.statusCode == 304 || response.statusCode == 200) {
+    final jsonData = json.decode(response.body);
+    List<dynamic> data = jsonData["data"];
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    final errorMessage = json.decode(response.body)['message'];
+    throw Exception('Error fetching user: $errorMessage');
+  }
+}

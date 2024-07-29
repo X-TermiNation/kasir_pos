@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
@@ -103,36 +104,45 @@ Future<Map<String, dynamic>?> addTrans(
 }
 
 //cetak invoice
-Future<void> generateInvoice(
-  String nama_cabang,
-  String alamat,
-  String no_telp,
-  DateTime date_trans,
-  String payment_method,
-  String delivery, //true = yes , false = no
-  List<Map<String, dynamic>> items,
-) async {
-  final response = await http.post(
-    Uri.parse('http://10.0.2.2:3000/invoice/generate-invoice'),
-    headers: <String, String>{
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
-    body: jsonEncode(<String, dynamic>{
-      'nama_cabang': nama_cabang,
-      'alamat': alamat,
-      'no_telp': no_telp,
-      'date_trans': date_trans,
-      'payment_method': payment_method,
-      'delivery': delivery,
-      'items': items,
-    }),
-  );
+void generateInvoice(
+    String nama_cabang,
+    String alamat,
+    String no_telp,
+    DateTime date_trans,
+    String payment_method,
+    String delivery, //true = yes , false = no
+    List<Map<String, dynamic>> items,
+    BuildContext context) async {
+  try {
+    final DateFormat formatter = DateFormat('dd/MM/yyyy');
+    String dateinvoice = formatter.format(date_trans);
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:3001/invoice/generate-invoice'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'nama_cabang': nama_cabang,
+        'alamat': alamat,
+        'no_telp': no_telp,
+        'date_trans': dateinvoice.toString(),
+        'payment_method': payment_method,
+        'delivery': delivery,
+        'items': items,
+      }),
+    );
 
-  if (response.statusCode == 200) {
-    // Handle successful response
-    // You can download and view the PDF using a PDF viewer package
-    print('Invoice generated successfully');
-  } else {
-    throw Exception('Failed to generate invoice');
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invoice Successfuly Generated')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: Invoice Failed Generated')),
+      );
+      throw Exception('Failed to generate invoice');
+    }
+  } catch (e) {
+    throw Exception("error occured while generate invoice: $e");
   }
 }

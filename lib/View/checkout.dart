@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kasir_pos/View/Cashier.dart';
+import 'package:kasir_pos/view-model-flutter/cabang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:qr/qr.dart';
@@ -251,7 +253,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                _confirmPayment();
+                _confirmPayment(_selectedPaymentMethod, _isDelivery);
                 widget.onClearCart();
               },
               child: Text('Pay'),
@@ -262,14 +264,33 @@ class _PaymentDialogState extends State<PaymentDialog> {
     );
   }
 
-  void _confirmPayment() async {
+  void _confirmPayment(String payment, bool delivery) async {
     await addTrans(_selectedPaymentMethod, _isDelivery, _noteController.text,
         data_item, status, context);
-    _showInvoiceDialog(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Pay Confirmed!')),
-    );
-    _noteController.text = "";
+    final dataStorage = GetStorage();
+    String id_cabang = dataStorage.read('id_cabang');
+    try {
+      List<Map<String, dynamic>> cabang = await getdatacabangByID(id_cabang);
+      String nama_cabang = cabang[0]['nama_cabang'];
+      String alamat = cabang[0]['alamat'];
+      String no_telp = cabang[0]['no_telp'];
+      DateTime invoicedate = DateTime.now();
+      String isdeliver;
+      if (delivery) {
+        isdeliver = "yes";
+      } else {
+        isdeliver = "no";
+      }
+      generateInvoice(nama_cabang, alamat, no_telp, invoicedate, payment,
+          isdeliver, data_item, context);
+      _showInvoiceDialog(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pay Confirmed!')),
+      );
+      _noteController.text = "";
+    } catch (e) {
+      throw Exception('Error fetching data: $e');
+    }
   }
 
   void _showInvoiceDialog(BuildContext context) {
