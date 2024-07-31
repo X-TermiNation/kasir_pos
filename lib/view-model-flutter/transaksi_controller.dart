@@ -104,7 +104,7 @@ Future<Map<String, dynamic>?> addTrans(
 }
 
 //cetak invoice
-void generateInvoice(
+Future<bool> generateInvoice(
     String nama_cabang,
     String alamat,
     String no_telp,
@@ -134,15 +134,19 @@ void generateInvoice(
 
     if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invoice Successfuly Generated')),
+        SnackBar(content: Text('Invoice Successfully Generated')),
       );
+      return true;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: Invoice Failed Generated')),
+        SnackBar(content: Text('Error: Invoice Failed to Generate')),
       );
-      throw Exception('Failed to generate invoice');
+      return false;
     }
   } catch (e) {
-    throw Exception("error occured while generate invoice: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error occurred while generating invoice: $e")),
+    );
+    return false;
   }
 }

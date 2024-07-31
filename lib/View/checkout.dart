@@ -65,6 +65,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
   bool _isLoading = true;
   List<Map<String, dynamic>> data_item = [];
   String status = "Confirmed";
+  bool _isInvoiceGenerated = false;
 
   @override
   void initState() {
@@ -281,13 +282,19 @@ class _PaymentDialogState extends State<PaymentDialog> {
       } else {
         isdeliver = "no";
       }
-      generateInvoice(nama_cabang, alamat, no_telp, invoicedate, payment,
-          isdeliver, data_item, context);
+      bool isgenerated = await generateInvoice(nama_cabang, alamat, no_telp,
+          invoicedate, payment, isdeliver, data_item, context);
       _showInvoiceDialog(context);
+
+      _noteController.text = "";
+      if (isgenerated) {
+        setState(() {
+          _isInvoiceGenerated = true;
+        });
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Pay Confirmed!')),
       );
-      _noteController.text = "";
     } catch (e) {
       throw Exception('Error fetching data: $e');
     }
@@ -298,31 +305,50 @@ class _PaymentDialogState extends State<PaymentDialog> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Payment Successful!'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SpinKitFadingCircle(color: Colors.blue, size: 50.0),
-              SizedBox(height: 20),
-              Text('Your payment has been confirmed.'),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  // Function blank for the download invoice button
-                },
-                child: Text('Download Invoice'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.pop(context);
-                },
-                child: Text('Continue'),
-              ),
-            ],
-          ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return FutureBuilder<bool>(
+              future: Future.delayed(Duration(milliseconds: 500),
+                  () => _isInvoiceGenerated), // Adjust delay as needed
+              builder: (context, snapshot) {
+                bool isGenerated = snapshot.data ?? false;
+                return AlertDialog(
+                  title: Text('Payment Successful!'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!isGenerated)
+                        SpinKitFadingCircle(color: Colors.blue, size: 50.0)
+                      else
+                        Icon(Icons.check_circle,
+                            color: Colors.green, size: 50.0),
+                      SizedBox(height: 20),
+                      Text('Your payment has been confirmed.'),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: isGenerated
+                            ? () {
+                                // Function for the download invoice button
+                              }
+                            : null,
+                        child: Text('Download Invoice'),
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: isGenerated
+                            ? () {
+                                Navigator.of(context).pop();
+                                Navigator.pop(context);
+                              }
+                            : null,
+                        child: Text('Continue'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
