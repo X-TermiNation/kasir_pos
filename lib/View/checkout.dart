@@ -61,11 +61,13 @@ class _PaymentDialogState extends State<PaymentDialog> {
   String _selectedPaymentMethod = 'QRIS';
   bool _isDelivery = false;
   TextEditingController _noteController = TextEditingController();
+  TextEditingController _emailinvoiceController = TextEditingController();
   String? qrCodeUrl;
   bool _isLoading = true;
   List<Map<String, dynamic>> data_item = [];
   String status = "Confirmed";
   bool _isInvoiceGenerated = false;
+  bool _sendinvoice = false;
 
   @override
   void initState() {
@@ -282,12 +284,13 @@ class _PaymentDialogState extends State<PaymentDialog> {
       } else {
         isdeliver = "no";
       }
-      bool isgenerated = await generateInvoice(nama_cabang, alamat, no_telp,
+      var result = await generateInvoice(nama_cabang, alamat, no_telp,
           invoicedate, payment, isdeliver, data_item, context);
-      _showInvoiceDialog(context);
+      print("ini hasil:${result['invoicePath']}");
+      _showInvoiceDialog(result['invoicePath'], context);
 
       _noteController.text = "";
-      if (isgenerated) {
+      if (result['success']) {
         setState(() {
           _isInvoiceGenerated = true;
         });
@@ -300,7 +303,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
     }
   }
 
-  void _showInvoiceDialog(BuildContext context) {
+  void _showInvoiceDialog(String invoicePath, BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -313,7 +316,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
               builder: (context, snapshot) {
                 bool isGenerated = snapshot.data ?? false;
                 return AlertDialog(
-                  title: Text('Payment Successful!'),
+                  title: Text('Payment Status'),
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -325,13 +328,49 @@ class _PaymentDialogState extends State<PaymentDialog> {
                       SizedBox(height: 20),
                       Text('Your payment has been confirmed.'),
                       SizedBox(height: 20),
+                      Column(
+                        children: <Widget>[
+                          _sendinvoice
+                              ? TextFormField(
+                                  controller: _emailinvoiceController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Enter email',
+                                  ),
+                                )
+                              : Container(),
+                        ],
+                      ),
                       ElevatedButton(
                         onPressed: isGenerated
                             ? () {
-                                // Function for the download invoice button
+                                if (_sendinvoice) {
+                                  if (_emailinvoiceController.text.isNotEmpty) {
+                                    sendInvoiceByEmail(invoicePath,
+                                        _emailinvoiceController.text, context);
+
+                                    setState(() {
+                                      _sendinvoice = false;
+                                      _emailinvoiceController
+                                          .clear(); // Clear the text field
+                                    });
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text('Email tidak boleh kosong!'),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  setState(() {
+                                    _sendinvoice = true;
+                                  });
+                                }
                               }
                             : null,
-                        child: Text('Download Invoice'),
+                        child: Text(_sendinvoice
+                            ? 'Confirm Email'
+                            : 'Send Invoice Via Email'),
                       ),
                       SizedBox(height: 20),
                       ElevatedButton(

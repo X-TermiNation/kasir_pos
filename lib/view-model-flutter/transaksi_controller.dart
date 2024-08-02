@@ -104,7 +104,7 @@ Future<Map<String, dynamic>?> addTrans(
 }
 
 //cetak invoice
-Future<bool> generateInvoice(
+Future<Map<String, dynamic>> generateInvoice(
     String nama_cabang,
     String alamat,
     String no_telp,
@@ -136,16 +136,51 @@ Future<bool> generateInvoice(
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Invoice Successfully Generated')),
       );
-      return true;
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      final String invoicePath = responseBody['downloadUrl'];
+      return {'success': true, 'invoicePath': invoicePath};
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: Invoice Failed to Generate')),
+      );
+      return {'success': false, 'invoicePath': null};
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error occurred while generating invoice: $e")),
+    );
+    return {'success': false, 'invoicePath': null};
+  }
+}
+
+Future<bool> sendInvoiceByEmail(
+    String invoicePath, String receiverEmail, BuildContext context) async {
+  final Uri uri = Uri.parse('http://10.0.2.2:3001/invoice/invoice-email');
+  try {
+    final response = await http.post(
+      uri,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'Invoicepath': invoicePath,
+        'receiveremail': receiverEmail,
+      }),
+    );
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invoice sent successfully')),
+      );
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: Failed to send invoice')),
       );
       return false;
     }
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error occurred while generating invoice: $e")),
+      SnackBar(content: Text("Error occurred while sending invoice: $e")),
     );
     return false;
   }
