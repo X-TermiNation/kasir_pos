@@ -103,6 +103,24 @@ Future<Map<String, dynamic>?> addTrans(
   return null; // Return null in case of an error
 }
 
+//show alltrans in cabang
+Future<List<Map<String, dynamic>>> getTrans() async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  final request =
+      Uri.parse('http://10.0.2.2:3001/transaksi/translist/$id_cabang');
+  final response = await http.get(request);
+  if (response.statusCode == 200 || response.statusCode == 304) {
+    final Map<String, dynamic> jsonData = json.decode(response.body);
+    List<dynamic> data = jsonData["data"];
+    print("ini data transaksi dari cabang: $data");
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    CustomToast(message: "Failed to load data: ${response.statusCode}");
+    return [];
+  }
+}
+
 //cetak invoice
 Future<Map<String, dynamic>> generateInvoice(
     String nama_cabang,

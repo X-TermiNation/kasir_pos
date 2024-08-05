@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:kasir_pos/View/checkout.dart';
+import 'package:kasir_pos/View/history.dart';
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 
@@ -70,6 +71,7 @@ class _CashierState extends State<Cashier> {
     });
   }
 
+//main display
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -92,6 +94,20 @@ class _CashierState extends State<Cashier> {
           return Scaffold(
             appBar: AppBar(
               title: Text('Point of Sale App'),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.history),
+                  onPressed: () {
+                    // Navigate to the history page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HistoryPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
             body: Row(
               children: [
