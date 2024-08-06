@@ -62,6 +62,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
   bool _isDelivery = false;
   TextEditingController _noteController = TextEditingController();
   TextEditingController _emailinvoiceController = TextEditingController();
+  TextEditingController _custAddressController = TextEditingController();
   String? qrCodeUrl;
   bool _isLoading = true;
   List<Map<String, dynamic>> data_item = [];
@@ -225,10 +226,22 @@ class _PaymentDialogState extends State<PaymentDialog> {
             ] else ...[
               SizedBox(height: 20),
               Center(
-                child: Text('Please pay with cash at the cashier.'),
+                child: Text('Silahkan pembayaran tunai langsung pada kasir.'),
               ),
             ],
             SizedBox(height: 20),
+            Column(
+              children: <Widget>[
+                _isDelivery
+                    ? TextFormField(
+                        controller: _custAddressController,
+                        decoration: InputDecoration(
+                          labelText: 'Input Alamat Pelanggan',
+                        ),
+                      )
+                    : Container(),
+              ],
+            ),
             CheckboxListTile(
               title: Text('Delivery'),
               value: _isDelivery,
@@ -248,7 +261,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                 controller: _noteController,
                 maxLines: null,
                 decoration: InputDecoration(
-                  labelText: 'Additional Notes',
+                  labelText: 'Catatan Tambahan',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -268,11 +281,21 @@ class _PaymentDialogState extends State<PaymentDialog> {
   }
 
   void _confirmPayment(String payment, bool delivery) async {
-    await addTrans(_selectedPaymentMethod, _isDelivery, _noteController.text,
-        data_item, status, context);
-    final dataStorage = GetStorage();
-    String id_cabang = dataStorage.read('id_cabang');
     try {
+      var response = await addTrans(
+          payment, delivery, _noteController.text, data_item, status, context);
+      var transData = response?['data'];
+      final dataStorage = GetStorage();
+      String id_cabang = dataStorage.read('id_cabang');
+      if (delivery && _custAddressController.text.isNotEmpty) {
+        var responseDeliver =
+            await addDelivery(_custAddressController.text, transData, context);
+        print(responseDeliver);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Alamat tidak boleh kosong!')),
+        );
+      }
       List<Map<String, dynamic>> cabang = await getdatacabangByID(id_cabang);
       String nama_cabang = cabang[0]['nama_cabang'];
       String alamat = cabang[0]['alamat'];
@@ -288,7 +311,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
           invoicedate, payment, isdeliver, data_item, context);
       print("ini hasil:${result['invoicePath']}");
       _showInvoiceDialog(result['invoicePath'], context);
-
       _noteController.text = "";
       if (result['success']) {
         setState(() {

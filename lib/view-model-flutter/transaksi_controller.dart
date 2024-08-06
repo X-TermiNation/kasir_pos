@@ -91,7 +91,8 @@ Future<Map<String, dynamic>?> addTrans(
     );
     if (response.statusCode == 200) {
       showToast(context, 'Berhasil menambah data');
-      return transData;
+      final responseData = jsonDecode(response.body);
+      return responseData;
     } else {
       showToast(context, "Gagal menambahkan data");
       print('HTTP Error: ${response.statusCode}');
@@ -119,6 +120,41 @@ Future<List<Map<String, dynamic>>> getTrans() async {
     CustomToast(message: "Failed to load data: ${response.statusCode}");
     return [];
   }
+}
+
+//add delivery
+Future<Map<String, dynamic>?> addDelivery(
+  alamat_tujuan,
+  transaksi_id,
+  BuildContext context,
+) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  DateTime trans_date = DateTime.now();
+  try {
+    final DeliveryData = {
+      alamat_tujuan: alamat_tujuan,
+      transaksi_id: transaksi_id.toString(),
+    };
+    final url = 'http://10.0.2.2:3001/transaksi/addDelivery/$id_cabang';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(DeliveryData),
+    );
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+      final responseData = jsonDecode(response.body);
+      return responseData;
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+  return null; // Return null in case of an error
 }
 
 //cetak invoice
