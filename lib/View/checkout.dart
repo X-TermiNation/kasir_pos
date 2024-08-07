@@ -160,120 +160,128 @@ class _PaymentDialogState extends State<PaymentDialog> {
               ),
             ),
             SizedBox(height: 20),
-            Text('Select Payment Method:'),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _isLoading = true; // Start showing loading indicator
-                        _fetchQRCodeUrl();
-                        _selectedPaymentMethod = 'QRIS';
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _selectedPaymentMethod == 'QRIS'
-                          ? Colors.blue
-                          : Colors.grey,
-                    ),
-                    child: Text('QRIS'),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _isLoading = false;
-                        qrCodeUrl = null;
-                        _selectedPaymentMethod = 'Cash';
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _selectedPaymentMethod == 'Cash'
-                          ? Colors.blue
-                          : Colors.grey,
-                    ),
-                    child: Text('Cash'),
-                  ),
-                ),
-              ],
-            ),
-            if (_selectedPaymentMethod == "QRIS") ...[
-              Center(
-                child: _isLoading
-                    ? CircularProgressIndicator()
-                    : Column(
-                        children: [
-                          Text('Scan this QR Code'),
-                          FutureBuilder<Uint8List>(
-                            future: generateQrImage(qrCodeUrl!),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              } else if (snapshot.hasError) {
-                                return Text('Error generating QR code');
-                              } else {
-                                return Image.memory(snapshot.data!);
-                              }
-                            },
-                          )
-                        ],
-                      ), // Show a loading indicator while the QR code is being fetched
-              ),
-            ] else ...[
-              SizedBox(height: 20),
-              Center(
-                child: Text('Silahkan pembayaran tunai langsung pada kasir.'),
-              ),
-            ],
-            SizedBox(height: 20),
-            Column(
-              children: <Widget>[
-                _isDelivery
-                    ? TextFormField(
-                        controller: _custAddressController,
-                        decoration: InputDecoration(
-                          labelText: 'Input Alamat Pelanggan',
-                        ),
-                      )
-                    : Container(),
-              ],
-            ),
-            CheckboxListTile(
-              title: Text('Delivery'),
-              value: _isDelivery,
-              onChanged: (bool? value) {
-                setState(() {
-                  _isDelivery = value ?? false;
-                  if (_isDelivery) {
-                    status = "Pending";
-                  } else {
-                    status = "Confirmed";
-                  }
-                });
-              },
-            ),
             Expanded(
-              child: TextField(
-                controller: _noteController,
-                maxLines: null,
-                decoration: InputDecoration(
-                  labelText: 'Catatan Tambahan',
-                  border: OutlineInputBorder(),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Text('Select Payment Method:'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _isLoading =
+                                    true; // Start showing loading indicator
+                                _fetchQRCodeUrl();
+                                _selectedPaymentMethod = 'QRIS';
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _selectedPaymentMethod == 'QRIS'
+                                  ? Colors.blue
+                                  : Colors.grey,
+                            ),
+                            child: Text('QRIS'),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _isLoading = false;
+                                qrCodeUrl = null;
+                                _selectedPaymentMethod = 'Cash';
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _selectedPaymentMethod == 'Cash'
+                                  ? Colors.blue
+                                  : Colors.grey,
+                            ),
+                            child: Text('Cash'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_selectedPaymentMethod == "QRIS") ...[
+                      Center(
+                        child: _isLoading
+                            ? CircularProgressIndicator()
+                            : Column(
+                                children: [
+                                  Text('Scan this QR Code'),
+                                  FutureBuilder<Uint8List>(
+                                    future: generateQrImage(qrCodeUrl!),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return CircularProgressIndicator();
+                                      } else if (snapshot.hasError) {
+                                        return Text('Error generating QR code');
+                                      } else {
+                                        return Image.memory(snapshot.data!);
+                                      }
+                                    },
+                                  )
+                                ],
+                              ), // Show a loading indicator while the QR code is being fetched
+                      ),
+                    ] else ...[
+                      SizedBox(height: 20),
+                      Center(
+                        child: Text(
+                            'Silahkan pembayaran tunai langsung pada kasir.'),
+                      ),
+                    ],
+                    SizedBox(height: 20),
+                    Column(
+                      children: <Widget>[
+                        _isDelivery
+                            ? TextFormField(
+                                controller: _custAddressController,
+                                decoration: InputDecoration(
+                                  labelText: 'Input Alamat Pelanggan',
+                                ),
+                              )
+                            : Container(),
+                      ],
+                    ),
+                    CheckboxListTile(
+                      title: Text('Delivery'),
+                      value: _isDelivery,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _isDelivery = value ?? false;
+                          if (_isDelivery) {
+                            status = "Pending";
+                          } else {
+                            status = "Confirmed";
+                          }
+                        });
+                      },
+                    ),
+                    TextField(
+                      controller: _noteController,
+                      maxLines: null,
+                      decoration: InputDecoration(
+                        labelText: 'Catatan Tambahan',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        _confirmPayment(_selectedPaymentMethod, _isDelivery);
+                        widget.onClearCart();
+                      },
+                      child: Text('Pay'),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _confirmPayment(_selectedPaymentMethod, _isDelivery);
-                widget.onClearCart();
-              },
-              child: Text('Pay'),
-            ),
+            )
           ],
         ),
       ),
@@ -282,44 +290,85 @@ class _PaymentDialogState extends State<PaymentDialog> {
 
   void _confirmPayment(String payment, bool delivery) async {
     try {
-      var response = await addTrans(
-          payment, delivery, _noteController.text, data_item, status, context);
-      var transData = response?['data'];
-      final dataStorage = GetStorage();
-      String id_cabang = dataStorage.read('id_cabang');
-      if (delivery && _custAddressController.text.isNotEmpty) {
-        var responseDeliver =
-            await addDelivery(_custAddressController.text, transData, context);
-        print(responseDeliver);
+      //check delivery
+      if (delivery) {
+        if (_custAddressController.text.isNotEmpty) {
+          //transaksi
+          var response = await addTrans(payment, delivery, _noteController.text,
+              data_item, status, context);
+          var transData = response?['data'];
+          final dataStorage = GetStorage();
+          String id_cabang = dataStorage.read('id_cabang');
+          //delivery
+          var responseDeliver = await addDelivery(
+              _custAddressController.text.toString(),
+              transData.toString(),
+              context);
+          print(responseDeliver);
+          List<Map<String, dynamic>> cabang =
+              await getdatacabangByID(id_cabang);
+          String nama_cabang = cabang[0]['nama_cabang'];
+          String alamat = cabang[0]['alamat'];
+          String no_telp = cabang[0]['no_telp'];
+          DateTime invoicedate = DateTime.now();
+          String isdeliver;
+          if (delivery) {
+            isdeliver = "yes";
+          } else {
+            isdeliver = "no";
+          }
+          //invoice
+          var result = await generateInvoice(nama_cabang, alamat, no_telp,
+              invoicedate, payment, isdeliver, data_item, context);
+          print("ini hasil:${result['invoicePath']}");
+          _showInvoiceDialog(result['invoicePath'], context);
+          _noteController.text = "";
+          if (result['success']) {
+            setState(() {
+              _isInvoiceGenerated = true;
+            });
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Pay Confirmed!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Alamat tidak boleh kosong!')),
+          );
+        }
       } else {
+        //transaksi
+        var response = await addTrans(payment, delivery, _noteController.text,
+            data_item, status, context);
+        var transData = response?['data'];
+        final dataStorage = GetStorage();
+        String id_cabang = dataStorage.read('id_cabang');
+        List<Map<String, dynamic>> cabang = await getdatacabangByID(id_cabang);
+        String nama_cabang = cabang[0]['nama_cabang'];
+        String alamat = cabang[0]['alamat'];
+        String no_telp = cabang[0]['no_telp'];
+        DateTime invoicedate = DateTime.now();
+        String isdeliver;
+        if (delivery) {
+          isdeliver = "yes";
+        } else {
+          isdeliver = "no";
+        }
+        //invoice
+        var result = await generateInvoice(nama_cabang, alamat, no_telp,
+            invoicedate, payment, isdeliver, data_item, context);
+        print("ini hasil:${result['invoicePath']}");
+        _showInvoiceDialog(result['invoicePath'], context);
+        _noteController.text = "";
+        if (result['success']) {
+          setState(() {
+            _isInvoiceGenerated = true;
+          });
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Alamat tidak boleh kosong!')),
+          SnackBar(content: Text('Pay Confirmed!')),
         );
       }
-      List<Map<String, dynamic>> cabang = await getdatacabangByID(id_cabang);
-      String nama_cabang = cabang[0]['nama_cabang'];
-      String alamat = cabang[0]['alamat'];
-      String no_telp = cabang[0]['no_telp'];
-      DateTime invoicedate = DateTime.now();
-      String isdeliver;
-      if (delivery) {
-        isdeliver = "yes";
-      } else {
-        isdeliver = "no";
-      }
-      var result = await generateInvoice(nama_cabang, alamat, no_telp,
-          invoicedate, payment, isdeliver, data_item, context);
-      print("ini hasil:${result['invoicePath']}");
-      _showInvoiceDialog(result['invoicePath'], context);
-      _noteController.text = "";
-      if (result['success']) {
-        setState(() {
-          _isInvoiceGenerated = true;
-        });
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pay Confirmed!')),
-      );
     } catch (e) {
       throw Exception('Error fetching data: $e');
     }

@@ -124,17 +124,17 @@ Future<List<Map<String, dynamic>>> getTrans() async {
 
 //add delivery
 Future<Map<String, dynamic>?> addDelivery(
-  alamat_tujuan,
-  transaksi_id,
+  String alamat_tujuan,
+  String transaksi_id,
   BuildContext context,
 ) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   DateTime trans_date = DateTime.now();
   try {
-    final DeliveryData = {
-      alamat_tujuan: alamat_tujuan,
-      transaksi_id: transaksi_id.toString(),
+    var DeliveryData = {
+      'alamat_tujuan': alamat_tujuan,
+      'transaksi_id': transaksi_id,
     };
     final url = 'http://10.0.2.2:3001/transaksi/addDelivery/$id_cabang';
     final response = await http.post(
