@@ -350,6 +350,36 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
   }
 }
 
+void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
+    String action, BuildContext context) async {
+  try {
+    final satuanUpdatedata = {
+      'jumlah_satuan': jumlah_satuan,
+      'action': action,
+    };
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    String id_gudangs = dataStorage.read('id_gudang');
+    final url =
+        'http://10.0.2.2:3001/barang/editjumlahsatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(satuanUpdatedata),
+    );
+
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+}
+
 Future<List<Map<String, dynamic>>> getsatuan(
     String id_barang, BuildContext context) async {
   try {

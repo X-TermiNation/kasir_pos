@@ -39,13 +39,29 @@ class _CashierState extends State<Cashier> {
 
   void _handleItemPressed(
       List<Map<String, dynamic>> satuanData, Barang item, int satuanIndex) {
+    // Check if the selected satuan has available stock
+    bool hasAvailableStock =
+        satuanData.any((satuan) => (satuan['jumlah_satuan'] ?? 0) > 0);
+
+    // Check if the stock for the selected satuan is zero
+    bool isSelectedSatuanAvailable =
+        (satuanData[satuanIndex]['jumlah_satuan'] ?? 0) > 0;
+
+    // If no satuan has available stock or the selected satuan has zero stock, show a message and return
+    if (!hasAvailableStock || !isSelectedSatuanAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Stock habis untuk barang ini!')),
+      );
+      return;
+    }
+
     setState(() {
       CartItem? existingCartItem = _cartItems.firstWhere(
         (cartItem) => cartItem.item.nama_barang == item.nama_barang,
         orElse: () => CartItem(
           item: item,
           quantity: 0,
-          selectedSatuan: satuanData[0], // Use satuanIndex here
+          selectedSatuan: satuanData[0],
           priceWithoutDiscount: (satuanData[0]['harga_satuan'] ?? 0).toDouble(),
         ),
       );
@@ -66,6 +82,11 @@ class _CashierState extends State<Cashier> {
           );
         }
       }
+
+      // Update price based on selected satuan
+      existingCartItem.selectedSatuan = satuanData[satuanIndex];
+      existingCartItem.priceWithoutDiscount =
+          (satuanData[satuanIndex]['harga_satuan'] ?? 0).toDouble();
 
       _updateSubtotal();
     });
@@ -190,14 +211,19 @@ class _CashierState extends State<Cashier> {
                                 cartItem: _cartItems[index],
                                 satuanData: _satuanDataList[index],
                                 onQuantityChanged: (newQuantity) {
-                                  setState(() {
-                                    if (newQuantity <= 0) {
-                                      _cartItems.removeAt(index);
-                                      _satuanDataList.removeAt(index);
-                                    } else {
-                                      _cartItems[index].quantity = newQuantity;
-                                    }
-                                    _updateSubtotal();
+                                  // Use WidgetsBinding to defer setState call
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    setState(() {
+                                      if (newQuantity <= 0) {
+                                        _cartItems.removeAt(index);
+                                        _satuanDataList.removeAt(index);
+                                      } else {
+                                        _cartItems[index].quantity =
+                                            newQuantity;
+                                      }
+                                      _updateSubtotal();
+                                    });
                                   });
                                 },
                               );
@@ -304,9 +330,11 @@ class _CashierState extends State<Cashier> {
   }
 
   void _updateSubtotal() {
-    setState(() {
-      subtotal = _calculateSubtotal();
-      total = _calculateTotal();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        subtotal = _calculateSubtotal();
+        total = _calculateTotal();
+      });
     });
   }
 
@@ -397,8 +425,26 @@ class _CartItemRowState extends State<CartItemRow> {
   @override
   void initState() {
     super.initState();
-    _selectedSatuan = widget.satuanData.isNotEmpty ? widget.satuanData[0] : {};
+    _initializeSelectedSatuan();
     fetchDiskonList();
+  }
+
+  void _initializeSelectedSatuan() {
+    List<Map<String, dynamic>> availableSatuan = widget.satuanData
+        .where((satuan) => (satuan['jumlah_satuan'] ?? 0) > 0)
+        .toList();
+
+    if (availableSatuan.isNotEmpty) {
+      setState(() {
+        _selectedSatuan = availableSatuan[0];
+      });
+    } else {
+      setState(() {
+        _selectedSatuan = {};
+      });
+    }
+
+    _updatePrices();
   }
 
   void fetchDiskonList() async {
@@ -450,8 +496,7 @@ class _CartItemRowState extends State<CartItemRow> {
                 flex: 2,
                 child: QuantityWidget(
                   quantity: widget.cartItem.quantity,
-                  jumlahSatuan:
-                      widget.cartItem.selectedSatuan['jumlah_satuan'] ?? 0,
+                  jumlahSatuan: _selectedSatuan['jumlah_satuan'] ?? 0,
                   onQuantityChanged: (newQuantity) {
                     setState(() {
                       if (newQuantity <= 0) {
@@ -467,20 +512,35 @@ class _CartItemRowState extends State<CartItemRow> {
               Expanded(
                 flex: 2,
                 child: DropdownButton<Map<String, dynamic>>(
-                  value: _selectedSatuan,
+                  value: _selectedSatuan.isNotEmpty ? _selectedSatuan : null,
                   onChanged: (newValue) {
-                    setState(() {
-                      _selectedSatuan = newValue!;
-                      widget.cartItem.selectedSatuan = newValue;
-                      widget.cartItem.quantity = 1; // Reset quantity to 1
-                      _updatePrices();
-                    });
+                    if (newValue != null) {
+                      // Check if the new satuan has stock
+                      if ((newValue['jumlah_satuan'] ?? 0) > 0) {
+                        setState(() {
+                          _selectedSatuan = newValue;
+                          widget.cartItem.selectedSatuan = newValue;
+                          widget.cartItem.quantity = 1; // Reset quantity to 1
+                          _updatePrices();
+                        });
+                      } else {
+                        // Show SnackBar message if stock is 0
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Stok satuan ini habis!'),
+                          ),
+                        );
+                        // Optionally, you can set _selectedSatuan to a non-zero stock item
+                        // to ensure there's always a valid selection.
+                      }
+                    }
                   },
                   iconSize: 20.0,
                   icon: Icon(Icons.arrow_drop_down),
                   style: TextStyle(fontSize: 16.0),
                   isExpanded: true,
-                  items: widget.satuanData.map((satuan) {
+                  items: widget.satuanData
+                      .map<DropdownMenuItem<Map<String, dynamic>>>((satuan) {
                     return DropdownMenuItem<Map<String, dynamic>>(
                       value: satuan,
                       child: Text(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kasir_pos/View/tools/custom_toast.dart';
+import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
@@ -72,7 +73,16 @@ Future<Map<String, dynamic>?> addTrans(
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   DateTime trans_date = DateTime.now();
+
   try {
+    for (var cartItem in items) {
+      String id_barang = cartItem['id_reference'];
+      String id_satuan = cartItem['id_satuan'];
+      int quantity = cartItem['trans_qty'];
+      updatejumlahSatuan(id_barang, id_satuan, quantity, 'kurang', context);
+    }
+
+    // Prepare transaction data
     final transData = {
       'id_cabang': id_cabang,
       'trans_date':
@@ -81,14 +91,18 @@ Future<Map<String, dynamic>?> addTrans(
       'delivery': delivery,
       'desc': desc,
       'status': status,
-      'Items': items
+      'Items': items,
     };
+
+    // Send the transaction data to the server
     final url = 'http://10.0.2.2:3001/transaksi/addtrans/$id_cabang';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(transData),
     );
+
+    // Handle the server response
     if (response.statusCode == 200) {
       showToast(context, 'Berhasil menambah data');
       final responseData = jsonDecode(response.body);
@@ -101,6 +115,7 @@ Future<Map<String, dynamic>?> addTrans(
     showToast(context, "Error: $error");
     print('Exception during HTTP request: $error');
   }
+
   return null; // Return null in case of an error
 }
 
