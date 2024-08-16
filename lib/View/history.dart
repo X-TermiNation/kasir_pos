@@ -1,10 +1,12 @@
 // history_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:kasir_pos/View/Login.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:kasir_pos/View/Cashier.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -117,6 +119,58 @@ class _HistoryPageState extends State<HistoryPage> {
       appBar: AppBar(
         title: Text('Transaction History'),
       ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 100, // Set a custom height for the header
+              child: DrawerHeader(
+                padding: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Cashier App',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.point_of_sale),
+              title: Text('Cashier'),
+              onTap: () {
+                setState(() {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Cashier(),
+                    ),
+                  );
+                });
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.history),
+              title: Text('Transaction History'),
+              onTap: () {},
+            ),
+            Spacer(),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Log Out'),
+              onTap: () {
+                showLogoutConfirmationDialog(context);
+              },
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Padding(
@@ -228,4 +282,34 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
   }
+}
+
+void showLogoutConfirmationDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Log Out'),
+        content: Text('Anda Ingin Log Out?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              GetStorage().erase();
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => Login()));
+              // Close the dialog
+            },
+            child: Text('Ya'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: Text('Tidak'),
+          ),
+        ],
+      );
+    },
+  );
 }

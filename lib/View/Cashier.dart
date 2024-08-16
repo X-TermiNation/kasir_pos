@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:kasir_pos/View/Login.dart';
 import 'package:kasir_pos/View/checkout.dart';
 import 'package:kasir_pos/View/history.dart';
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
@@ -24,31 +25,37 @@ class _CashierState extends State<Cashier> {
   static const int itemsPerPage = 9;
   int currentPage = 0;
   List<Barang> _items = [];
+  List<Barang> _displayedItems = [];
   List<CartItem> _cartItems = [];
+  List<Barang> _allItems = [];
   List<List<Map<String, dynamic>>> _satuanDataList = [];
 
   @override
   void initState() {
     super.initState();
-    barangdata.then((value) {
-      setState(() {
-        _items = value.map((item) => Barang.fromJson(item)).toList();
-      });
-    });
+    fetchBarang();
   }
 
   void _handleItemPressed(
       List<Map<String, dynamic>> satuanData, Barang item, int satuanIndex) {
+    // Check if the selected index is within bounds
+    if (satuanIndex < 0 || satuanIndex >= satuanData.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Index tidak valid')),
+      );
+      return;
+    }
+
     // Check if the selected satuan has available stock
     bool hasAvailableStock =
         satuanData.any((satuan) => (satuan['jumlah_satuan'] ?? 0) > 0);
 
-    // Check if the stock for the selected satuan is zero
+    // Check if the stock for the selected satuan is greater than 0
     bool isSelectedSatuanAvailable =
         (satuanData[satuanIndex]['jumlah_satuan'] ?? 0) > 0;
 
     // If no satuan has available stock or the selected satuan has zero stock, show a message and return
-    if (!hasAvailableStock || !isSelectedSatuanAvailable) {
+    if (!hasAvailableStock && !isSelectedSatuanAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Stock habis untuk barang ini!')),
       );
@@ -92,6 +99,29 @@ class _CashierState extends State<Cashier> {
     });
   }
 
+  Future<void> fetchBarang() async {
+    var barangData =
+        await Future.delayed(Duration(seconds: 1), () => getBarang(id_gudang));
+    setState(() {
+      _items = (barangData ?? []).map((item) => Barang.fromJson(item)).toList();
+      _allItems = List.from(_items); // Initialize _allItems with all items
+      _updateDisplayedItems();
+    });
+  }
+
+  void _updateDisplayedItems([String query = '']) {
+    setState(() {
+      _displayedItems = _allItems.where((item) {
+        return item.nama_barang.toLowerCase().contains(query.toLowerCase());
+      }).toList();
+      int totalPages = (_displayedItems.length / itemsPerPage).ceil();
+      _displayedItems = _displayedItems
+          .skip(currentPage * itemsPerPage)
+          .take(itemsPerPage)
+          .toList();
+    });
+  }
+
 //main display
   @override
   Widget build(BuildContext context) {
@@ -107,46 +137,100 @@ class _CashierState extends State<Cashier> {
               .map((item) => Barang.fromJson(item))
               .toList();
           int totalPages = (_items.length / itemsPerPage).ceil();
-          List<Barang> displayedItems = _items
-              .skip(currentPage * itemsPerPage)
-              .take(itemsPerPage)
-              .toList();
 
           return Scaffold(
             appBar: AppBar(
               title: Text('Point of Sale App'),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.history),
-                  onPressed: () {
-                    // Navigate to the history page
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HistoryPage(),
+            ),
+            drawer: Drawer(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 100, // Set a custom height for the header
+                    child: DrawerHeader(
+                      padding: EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
                       ),
-                    );
-                  },
-                ),
-              ],
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Cashier App',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.point_of_sale),
+                    title: Text('Cashier'),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.history),
+                    title: Text('Transaction History'),
+                    onTap: () {
+                      setState(() {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HistoryPage(),
+                          ),
+                        );
+                      });
+                    },
+                  ),
+                  Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Colors.grey, width: 1.0),
+                      ),
+                    ),
+                    child: ListTile(
+                      leading: Icon(Icons.logout),
+                      title: Text('Log Out'),
+                      onTap: () {
+                        showLogoutConfirmationDialog(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
             body: Row(
               children: [
-                // Left side: List of items
+                // Left side: List of items with search bar
                 Expanded(
                   flex: 2,
                   child: Container(
                     padding: EdgeInsets.all(16.0),
                     child: Column(
                       children: [
+                        // Search bar
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search items...',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (query) {
+                            _updateDisplayedItems(query);
+                          },
+                        ),
+                        SizedBox(
+                            height: 16.0), // Space between search bar and grid
                         // List of items
                         Expanded(
                           child: GridView.count(
                             crossAxisCount: 3,
                             childAspectRatio: 1,
                             children:
-                                displayedItems.asMap().entries.map((entry) {
-                              int index = entry.key;
+                                _displayedItems.asMap().entries.map((entry) {
+                              int index = 0;
                               Barang item = entry.value;
                               return ItemCard(
                                 item: item,
@@ -201,6 +285,11 @@ class _CashierState extends State<Cashier> {
                     padding: EdgeInsets.all(16.0),
                     child: Column(
                       children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text("Cart Items: ${_cartItems.length}"),
+                        ),
+
                         // Cart table
                         Expanded(
                           child: ListView.builder(
@@ -211,7 +300,6 @@ class _CashierState extends State<Cashier> {
                                 cartItem: _cartItems[index],
                                 satuanData: _satuanDataList[index],
                                 onQuantityChanged: (newQuantity) {
-                                  // Use WidgetsBinding to defer setState call
                                   WidgetsBinding.instance
                                       .addPostFrameCallback((_) {
                                     setState(() {
@@ -277,13 +365,15 @@ class _CashierState extends State<Cashier> {
                               onPressed: () {
                                 if (_cartItems.isNotEmpty) {
                                   Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => PaymentDialog(
-                                                total: total,
-                                                onClearCart: _clearCart,
-                                                cartItems: _cartItems,
-                                              )));
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaymentDialog(
+                                        total: total,
+                                        onClearCart: _clearCart,
+                                        cartItems: _cartItems,
+                                      ),
+                                    ),
+                                  );
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -307,6 +397,36 @@ class _CashierState extends State<Cashier> {
             ),
           );
         }
+      },
+    );
+  }
+
+  void showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Log Out'),
+          content: Text('Anda Ingin Log Out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                GetStorage().erase();
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => Login()));
+                // Close the dialog
+              },
+              child: Text('Ya'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Tidak'),
+            ),
+          ],
+        );
       },
     );
   }
@@ -510,88 +630,110 @@ class _CartItemRowState extends State<CartItemRow> {
                 ),
               ),
               Expanded(
-                flex: 2,
-                child: DropdownButton<Map<String, dynamic>>(
-                  value: _selectedSatuan.isNotEmpty ? _selectedSatuan : null,
-                  onChanged: (newValue) {
-                    if (newValue != null) {
-                      // Check if the new satuan has stock
-                      if ((newValue['jumlah_satuan'] ?? 0) > 0) {
-                        setState(() {
-                          _selectedSatuan = newValue;
-                          widget.cartItem.selectedSatuan = newValue;
-                          widget.cartItem.quantity = 1; // Reset quantity to 1
-                          _updatePrices();
-                        });
-                      } else {
-                        // Show SnackBar message if stock is 0
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Stok satuan ini habis!'),
-                          ),
-                        );
-                        // Optionally, you can set _selectedSatuan to a non-zero stock item
-                        // to ensure there's always a valid selection.
-                      }
-                    }
-                  },
-                  iconSize: 20.0,
-                  icon: Icon(Icons.arrow_drop_down),
-                  style: TextStyle(fontSize: 16.0),
-                  isExpanded: true,
-                  items: widget.satuanData
-                      .map<DropdownMenuItem<Map<String, dynamic>>>((satuan) {
-                    return DropdownMenuItem<Map<String, dynamic>>(
-                      value: satuan,
-                      child: Text(
-                        '${satuan['nama_satuan']}',
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: TextStyle(color: Colors.black),
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey, // Background color
+                      borderRadius: BorderRadius.circular(12), // Rounded edges
+                      border: Border.all(color: Colors.grey), // Border color
+                    ),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 12), // Padding inside the dropdown
+                    child: DropdownButtonHideUnderline(
+                      // Hides the default underline
+                      child: DropdownButton<Map<String, dynamic>>(
+                        value:
+                            _selectedSatuan.isNotEmpty ? _selectedSatuan : null,
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            print(newValue);
+                            // Check stock
+                            if ((newValue['jumlah_satuan'] ?? 0) > 0) {
+                              setState(() {
+                                _selectedSatuan = newValue;
+                                widget.cartItem.selectedSatuan = newValue;
+                                widget.cartItem.quantity = 1;
+                                _updatePrices();
+                              });
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Stok satuan ini habis!'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        iconSize: 24.0,
+                        icon: Icon(Icons.arrow_drop_down),
+                        style: TextStyle(fontSize: 16.0, color: Colors.black),
+                        isExpanded: true,
+                        items: widget.satuanData
+                            .map<DropdownMenuItem<Map<String, dynamic>>>(
+                                (satuan) {
+                          return DropdownMenuItem<Map<String, dynamic>>(
+                            value: satuan,
+                            child: Text(
+                              '${satuan['nama_satuan']}',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
+                    ),
+                  )),
               SizedBox(
                 width: 5,
               ),
               Expanded(
-                flex: 2,
-                child: DropdownButton<Map<String, dynamic>>(
-                  value: _selectedDiskon,
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedDiskon = newValue;
-                      _updatePrices();
-                    });
-                  },
-                  iconSize: 20.0,
-                  icon: Icon(Icons.arrow_drop_down),
-                  style: TextStyle(fontSize: 16.0),
-                  isExpanded: true,
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(
-                        'No Discount',
-                        style: TextStyle(color: Colors.black),
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey, // Background color
+                      borderRadius: BorderRadius.circular(12), // Rounded edges
+                      border: Border.all(color: Colors.grey), // Border color
+                    ),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 12), // Padding inside the dropdown
+                    child: DropdownButtonHideUnderline(
+                      // Hides the default underline
+                      child: DropdownButton<Map<String, dynamic>>(
+                        value: _selectedDiskon,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedDiskon = newValue;
+                            _updatePrices();
+                          });
+                        },
+                        iconSize: 20.0,
+                        icon: Icon(Icons.arrow_drop_down),
+                        style: TextStyle(fontSize: 16.0),
+                        isExpanded: true,
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'No Discount',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ),
+                          ..._diskonList.map((diskon) {
+                            return DropdownMenuItem<Map<String, dynamic>>(
+                              value: diskon,
+                              child: Text(
+                                '${diskon['nama_diskon']}',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: TextStyle(color: Colors.black),
+                              ),
+                            );
+                          }).toList(),
+                        ],
                       ),
                     ),
-                    ..._diskonList.map((diskon) {
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: diskon,
-                        child: Text(
-                          '${diskon['nama_diskon']}',
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                ),
-              ),
+                  )),
             ],
           ),
           if (_selectedSatuan.isNotEmpty)
