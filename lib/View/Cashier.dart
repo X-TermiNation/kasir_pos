@@ -46,15 +46,12 @@ class _CashierState extends State<Cashier> {
       return;
     }
 
-    // Check if the selected satuan has available stock
     bool hasAvailableStock =
         satuanData.any((satuan) => (satuan['jumlah_satuan'] ?? 0) > 0);
 
-    // Check if the stock for the selected satuan is greater than 0
     bool isSelectedSatuanAvailable =
         (satuanData[satuanIndex]['jumlah_satuan'] ?? 0) > 0;
 
-    // If no satuan has available stock or the selected satuan has zero stock, show a message and return
     if (!hasAvailableStock && !isSelectedSatuanAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Stock habis untuk barang ini!')),
@@ -104,7 +101,7 @@ class _CashierState extends State<Cashier> {
         await Future.delayed(Duration(seconds: 1), () => getBarang(id_gudang));
     setState(() {
       _items = (barangData ?? []).map((item) => Barang.fromJson(item)).toList();
-      _allItems = List.from(_items); // Initialize _allItems with all items
+      _allItems = List.from(_items);
       _updateDisplayedItems();
     });
   }
