@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:kasir_pos/View/Login.dart';
+import 'package:kasir_pos/View/tools/theme_mode.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   await GetStorage.init();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider<ThemeManager>(
+      create: (_) => ThemeManager(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

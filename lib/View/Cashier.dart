@@ -6,6 +6,8 @@ import 'package:kasir_pos/View/checkout.dart';
 import 'package:kasir_pos/View/history.dart';
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
+import 'package:kasir_pos/View/tools/theme_mode.dart';
+import 'package:provider/provider.dart';
 
 final dataStorage = GetStorage();
 String id_gudang = dataStorage.read('id_gudang');
@@ -135,262 +137,291 @@ class _CashierState extends State<Cashier> {
               .toList();
           int totalPages = (_items.length / itemsPerPage).ceil();
 
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Point of Sale App'),
-            ),
-            drawer: Drawer(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 100, // Set a custom height for the header
-                    child: DrawerHeader(
-                      padding: EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                      ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Cashier App',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
+          return MaterialApp(
+            theme: Provider.of<ThemeManager>(context).getTheme(),
+            home: Scaffold(
+              appBar: AppBar(
+                title: Text('Point of Sale App'),
+              ),
+              drawer: Drawer(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 100, // Set a custom height for the header
+                      child: DrawerHeader(
+                        padding: EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Cashier App',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 20,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.point_of_sale),
-                    title: Text('Cashier'),
-                    onTap: () {},
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.history),
-                    title: Text('Transaction History'),
-                    onTap: () {
-                      setState(() {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HistoryPage(),
-                          ),
-                        );
-                      });
-                    },
-                  ),
-                  Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: Colors.grey, width: 1.0),
+                    ListTile(
+                      leading: Icon(Icons.point_of_sale),
+                      title: Text('Cashier'),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.history),
+                      title: Text('Transaction History'),
+                      onTap: () {
+                        setState(() {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HistoryPage(),
+                            ),
+                          );
+                        });
+                      },
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.settings_display_rounded),
+                      title: Consumer<ThemeManager>(
+                        builder: (context, themeProvider, child) {
+                          return Text(themeProvider.isDarkMode
+                              ? 'Change Light Mode'
+                              : 'Change Dark Mode');
+                        },
+                      ),
+                      onTap: () {
+                        Provider.of<ThemeManager>(context, listen: false)
+                            .toggleDarkMode();
+                      },
+                    ),
+                    Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.grey, width: 1.0),
+                        ),
+                      ),
+                      child: ListTile(
+                        leading: Icon(Icons.logout),
+                        title: Text('Log Out'),
+                        onTap: () {
+                          showLogoutConfirmationDialog(context);
+                        },
                       ),
                     ),
-                    child: ListTile(
-                      leading: Icon(Icons.logout),
-                      title: Text('Log Out'),
-                      onTap: () {
-                        showLogoutConfirmationDialog(context);
-                      },
+                  ],
+                ),
+              ),
+              body: Row(
+                children: [
+                  // Left side: List of items with search bar
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          // Search bar
+                          TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search items...',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.search),
+                            ),
+                            onChanged: (query) {
+                              _updateDisplayedItems(query);
+                            },
+                          ),
+                          SizedBox(
+                              height:
+                                  16.0), // Space between search bar and grid
+                          // List of items
+                          Expanded(
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1,
+                              children:
+                                  _displayedItems.asMap().entries.map((entry) {
+                                int index = 0;
+                                Barang item = entry.value;
+                                return ItemCard(
+                                  item: item,
+                                  satuanIndex:
+                                      index, // Pass the index to ItemCard
+                                  onPressed: () async {
+                                    List<Map<String, dynamic>> satuanData =
+                                        await getsatuan(item.id, context);
+                                    _handleItemPressed(satuanData, item,
+                                        index); // Pass index to _handleItemPressed
+                                    _updateSubtotal();
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          // Page navigation
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.arrow_back),
+                                onPressed: currentPage > 0
+                                    ? () {
+                                        setState(() {
+                                          currentPage--;
+                                        });
+                                      }
+                                    : null,
+                              ),
+                              Text('Page ${currentPage + 1} of $totalPages'),
+                              IconButton(
+                                icon: Icon(Icons.arrow_forward),
+                                onPressed: currentPage < totalPages - 1
+                                    ? () {
+                                        setState(() {
+                                          currentPage++;
+                                        });
+                                      }
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 1, // adjust the width of the border
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .dividerColor, // use the theme's divider color
+                        width: 1, // adjust the width of the border
+                      ),
+                    ),
+                  ),
+                  // Right side: Cart
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text("Cart Items: ${_cartItems.length}"),
+                          ),
+
+                          // Cart table
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: _cartItems.length,
+                              itemBuilder: (context, index) {
+                                return CartItemRow(
+                                  key: ValueKey(_cartItems[index].item.id),
+                                  cartItem: _cartItems[index],
+                                  satuanData: _satuanDataList[index],
+                                  onQuantityChanged: (newQuantity) {
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                      setState(() {
+                                        if (newQuantity <= 0) {
+                                          _cartItems.removeAt(index);
+                                          _satuanDataList.removeAt(index);
+                                        } else {
+                                          _cartItems[index].quantity =
+                                              newQuantity;
+                                        }
+                                        _updateSubtotal();
+                                      });
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          // Total price
+                          Container(
+                            padding: EdgeInsets.all(16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Subtotal:'),
+                                Text(
+                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal)}',
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Tax (11%)
+                          Container(
+                            padding: EdgeInsets.all(16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Tax (11%):'),
+                                Text(
+                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal * (11 / 100))}',
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Total price after tax
+                          Container(
+                            padding: EdgeInsets.all(16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Total:'),
+                                Text(
+                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(total)}',
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(right: 10),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: FilledButton(
+                                onPressed: () {
+                                  if (_cartItems.isNotEmpty) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PaymentDialog(
+                                          total: total,
+                                          onClearCart: _clearCart,
+                                          cartItems: _cartItems,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Warning: Cart tidak boleh kosong!')),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  "Checkout",
+                                  style: TextStyle(
+                                      fontSize: 20, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            body: Row(
-              children: [
-                // Left side: List of items with search bar
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        // Search bar
-                        TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search items...',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.search),
-                          ),
-                          onChanged: (query) {
-                            _updateDisplayedItems(query);
-                          },
-                        ),
-                        SizedBox(
-                            height: 16.0), // Space between search bar and grid
-                        // List of items
-                        Expanded(
-                          child: GridView.count(
-                            crossAxisCount: 3,
-                            childAspectRatio: 1,
-                            children:
-                                _displayedItems.asMap().entries.map((entry) {
-                              int index = 0;
-                              Barang item = entry.value;
-                              return ItemCard(
-                                item: item,
-                                satuanIndex:
-                                    index, // Pass the index to ItemCard
-                                onPressed: () async {
-                                  List<Map<String, dynamic>> satuanData =
-                                      await getsatuan(item.id, context);
-                                  _handleItemPressed(satuanData, item,
-                                      index); // Pass index to _handleItemPressed
-                                  _updateSubtotal();
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                        // Page navigation
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.arrow_back),
-                              onPressed: currentPage > 0
-                                  ? () {
-                                      setState(() {
-                                        currentPage--;
-                                      });
-                                    }
-                                  : null,
-                            ),
-                            Text('Page ${currentPage + 1} of $totalPages'),
-                            IconButton(
-                              icon: Icon(Icons.arrow_forward),
-                              onPressed: currentPage < totalPages - 1
-                                  ? () {
-                                      setState(() {
-                                        currentPage++;
-                                      });
-                                    }
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Right side: Cart
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text("Cart Items: ${_cartItems.length}"),
-                        ),
-
-                        // Cart table
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _cartItems.length,
-                            itemBuilder: (context, index) {
-                              return CartItemRow(
-                                key: ValueKey(_cartItems[index].item.id),
-                                cartItem: _cartItems[index],
-                                satuanData: _satuanDataList[index],
-                                onQuantityChanged: (newQuantity) {
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    setState(() {
-                                      if (newQuantity <= 0) {
-                                        _cartItems.removeAt(index);
-                                        _satuanDataList.removeAt(index);
-                                      } else {
-                                        _cartItems[index].quantity =
-                                            newQuantity;
-                                      }
-                                      _updateSubtotal();
-                                    });
-                                  });
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        // Total price
-                        Container(
-                          padding: EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Subtotal:'),
-                              Text(
-                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal)}',
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Tax (11%)
-                        Container(
-                          padding: EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Tax (11%):'),
-                              Text(
-                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal * (11 / 100))}',
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Total price after tax
-                        Container(
-                          padding: EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Total:'),
-                              Text(
-                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(total)}',
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(right: 10),
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: FilledButton(
-                              onPressed: () {
-                                if (_cartItems.isNotEmpty) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PaymentDialog(
-                                        total: total,
-                                        onClearCart: _clearCart,
-                                        cartItems: _cartItems,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            'Warning: Cart tidak boleh kosong!')),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                "CheckOut",
-                                style: TextStyle(fontSize: 20),
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ),
           );
         }
@@ -502,6 +533,10 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 10, // Add a shadow to the card
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.grey[800]
+          : Theme.of(context).cardColor,
       child: InkWell(
         onTap: onPressed,
         child: Padding(
@@ -509,7 +544,10 @@ class ItemCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(item.nama_barang),
+              Text(
+                item.nama_barang,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
             ],
           ),
         ),
@@ -674,7 +712,7 @@ class _CartItemRowState extends State<CartItemRow> {
                               '${satuan['nama_satuan']}',
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: TextStyle(color: Colors.black),
+                              style: Theme.of(context).textTheme.labelLarge,
                             ),
                           );
                         }).toList(),
@@ -713,7 +751,7 @@ class _CartItemRowState extends State<CartItemRow> {
                             value: null,
                             child: Text(
                               'No Discount',
-                              style: TextStyle(color: Colors.black),
+                              style: Theme.of(context).textTheme.labelLarge,
                             ),
                           ),
                           ..._diskonList.map((diskon) {
@@ -723,7 +761,7 @@ class _CartItemRowState extends State<CartItemRow> {
                                 '${diskon['nama_diskon']}',
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
-                                style: TextStyle(color: Colors.black),
+                                style: Theme.of(context).textTheme.labelLarge,
                               ),
                             );
                           }).toList(),

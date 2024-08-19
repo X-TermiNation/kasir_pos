@@ -7,6 +7,8 @@ import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:qr/qr.dart';
 import 'dart:typed_data';
+import 'package:kasir_pos/View/tools/theme_mode.dart';
+import 'package:provider/provider.dart';
 import 'dart:ui' as ui;
 
 Future<Uint8List> generateQrImage(String data) async {
@@ -119,170 +121,197 @@ class _PaymentDialogState extends State<PaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Confirm Payment'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Cart Items:'),
-            Container(
-              height: 200, // Adjust as needed
-              child: ListView.builder(
-                itemCount: widget.cartItems.length,
-                itemBuilder: (context, index) {
-                  final item = widget.cartItems[index];
-                  return ListTile(
-                    title: Text(item.item.nama_barang),
-                    subtitle: item.priceWithDiscount != null
-                        ? Text(
-                            'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}      Diskon:${item.discountpercentage}%')
-                        : Text(
-                            'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}'),
-                    trailing: Text('Qty: ${item.quantity}'),
-                  );
-                },
+    return MaterialApp(
+      theme: Provider.of<ThemeManager>(context).getTheme(),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Confirm Payment'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Cart Items:'),
+              Container(
+                height: 200, // Adjust as needed
+                child: ListView.builder(
+                  itemCount: widget.cartItems.length,
+                  itemBuilder: (context, index) {
+                    final item = widget.cartItems[index];
+                    return ListTile(
+                      title: Text(item.item.nama_barang),
+                      subtitle: item.priceWithDiscount != null
+                          ? Text(
+                              'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}      Diskon:${item.discountpercentage}%')
+                          : Text(
+                              'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}'),
+                      trailing: Text('Qty: ${item.quantity}'),
+                    );
+                  },
+                ),
               ),
-            ),
-            Text.rich(
-              TextSpan(
-                text: 'Total: ',
-                children: [
-                  TextSpan(
-                    text:
-                        '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
+              Text.rich(
+                TextSpan(
+                  text: 'Total: ',
                   children: [
-                    Text('Select Payment Method:'),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isLoading =
-                                    true; // Start showing loading indicator
-                                _fetchQRCodeUrl();
-                                _selectedPaymentMethod = 'QRIS';
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _selectedPaymentMethod == 'QRIS'
-                                  ? Colors.blue
-                                  : Colors.grey,
-                            ),
-                            child: Text('QRIS'),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isLoading = false;
-                                qrCodeUrl = null;
-                                _selectedPaymentMethod = 'Cash';
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _selectedPaymentMethod == 'Cash'
-                                  ? Colors.blue
-                                  : Colors.grey,
-                            ),
-                            child: Text('Cash'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_selectedPaymentMethod == "QRIS") ...[
-                      Center(
-                        child: _isLoading
-                            ? CircularProgressIndicator()
-                            : Column(
-                                children: [
-                                  Text('Scan this QR Code'),
-                                  FutureBuilder<Uint8List>(
-                                    future: generateQrImage(qrCodeUrl!),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return CircularProgressIndicator();
-                                      } else if (snapshot.hasError) {
-                                        return Text('Error generating QR code');
-                                      } else {
-                                        return Image.memory(snapshot.data!);
-                                      }
-                                    },
-                                  )
-                                ],
-                              ), // Show a loading indicator while the QR code is being fetched
-                      ),
-                    ] else ...[
-                      SizedBox(height: 20),
-                      Center(
-                        child: Text(
-                            'Silahkan pembayaran tunai langsung pada kasir.'),
-                      ),
-                    ],
-                    SizedBox(height: 20),
-                    Column(
-                      children: <Widget>[
-                        _isDelivery
-                            ? TextFormField(
-                                controller: _custAddressController,
-                                decoration: InputDecoration(
-                                  labelText: 'Input Alamat Pelanggan',
-                                ),
-                              )
-                            : Container(),
-                      ],
-                    ),
-                    CheckboxListTile(
-                      title: Text('Delivery'),
-                      value: _isDelivery,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          _isDelivery = value ?? false;
-                          if (_isDelivery) {
-                            status = "Pending";
-                          } else {
-                            status = "Confirmed";
-                          }
-                        });
-                      },
-                    ),
-                    TextField(
-                      controller: _noteController,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        labelText: 'Catatan Tambahan',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        _confirmPayment(_selectedPaymentMethod, _isDelivery);
-                        widget.onClearCart();
-                      },
-                      child: Text('Pay'),
+                    TextSpan(
+                      text:
+                          '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
               ),
-            )
-          ],
+              SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Text('Select Payment Method:'),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isLoading =
+                                      true; // Start showing loading indicator
+                                  _fetchQRCodeUrl();
+                                  _selectedPaymentMethod = 'QRIS';
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    _selectedPaymentMethod == 'QRIS'
+                                        ? Colors.blue
+                                        : Colors.grey,
+                              ),
+                              child: Text('QRIS',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isLoading = false;
+                                  qrCodeUrl = null;
+                                  _selectedPaymentMethod = 'Cash';
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    _selectedPaymentMethod == 'Cash'
+                                        ? Colors.blue
+                                        : Colors.grey,
+                              ),
+                              child: Text(
+                                'Cash',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_selectedPaymentMethod == "QRIS") ...[
+                        Center(
+                          child: _isLoading
+                              ? CircularProgressIndicator()
+                              : Column(
+                                  children: [
+                                    Text('Scan this QR Code'),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border(
+                                          top: BorderSide(
+                                              color: Colors.grey, width: 1.0),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16.0),
+                                        child: FutureBuilder<Uint8List>(
+                                          future: generateQrImage(qrCodeUrl!),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return CircularProgressIndicator();
+                                            } else if (snapshot.hasError) {
+                                              return Text(
+                                                  'Error generating QR code');
+                                            } else {
+                                              return Image.memory(
+                                                  snapshot.data!);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ), // Show a loading indicator while the QR code is being fetched
+                        ),
+                      ] else ...[
+                        SizedBox(height: 20),
+                        Center(
+                          child: Text(
+                              'Silahkan pembayaran tunai langsung pada kasir.'),
+                        ),
+                      ],
+                      SizedBox(height: 20),
+                      Column(
+                        children: <Widget>[
+                          _isDelivery
+                              ? TextFormField(
+                                  controller: _custAddressController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Input Alamat Pelanggan',
+                                  ),
+                                )
+                              : Container(),
+                        ],
+                      ),
+                      CheckboxListTile(
+                        title: Text('Delivery'),
+                        value: _isDelivery,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _isDelivery = value ?? false;
+                            if (_isDelivery) {
+                              status = "Pending";
+                            } else {
+                              status = "Confirmed";
+                            }
+                          });
+                        },
+                      ),
+                      TextField(
+                        controller: _noteController,
+                        maxLines: null,
+                        decoration: InputDecoration(
+                          labelText: 'Catatan Tambahan',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          _confirmPayment(_selectedPaymentMethod, _isDelivery);
+                          widget.onClearCart();
+                        },
+                        child: Text('Pay'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

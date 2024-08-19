@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:kasir_pos/View/Cashier.dart';
+import 'package:kasir_pos/View/tools/theme_mode.dart';
+import 'package:provider/provider.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -115,170 +117,240 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget build(BuildContext context) {
     final totalPages = (transactions.length / transactionsPerPage).ceil();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Transaction History'),
-      ),
-      drawer: Drawer(
-        child: Column(
-          children: [
-            SizedBox(
-              height: 100, // Set a custom height for the header
-              child: DrawerHeader(
-                padding: EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Cashier App',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
+    return MaterialApp(
+      theme: Provider.of<ThemeManager>(context).getTheme(),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Transaction History'),
+        ),
+        drawer: Drawer(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 100, // Set a custom height for the header
+                child: DrawerHeader(
+                  padding: EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Cashier App',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 20,
+                      ),
                     ),
                   ),
                 ),
               ),
+              ListTile(
+                leading: Icon(Icons.point_of_sale),
+                title: Text('Cashier'),
+                onTap: () {
+                  setState(() {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Cashier(),
+                      ),
+                    );
+                  });
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.history),
+                title: Text('Transaction History'),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: Icon(Icons.settings_display_rounded),
+                title: Consumer<ThemeManager>(
+                  builder: (context, themeProvider, child) {
+                    return Text(themeProvider.isDarkMode
+                        ? 'Change Light Mode'
+                        : 'Change Dark Mode');
+                  },
+                ),
+                onTap: () {
+                  Provider.of<ThemeManager>(context, listen: false)
+                      .toggleDarkMode();
+                },
+              ),
+              Spacer(),
+              ListTile(
+                leading: Icon(Icons.logout),
+                title: Text('Log Out'),
+                onTap: () {
+                  showLogoutConfirmationDialog(context);
+                },
+              ),
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        "Sort By:",
+                        style: TextStyle(fontSize: 15),
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Provider.of<ThemeManager>(context)
+                              .getTheme()
+                              .primaryColor,
+                          borderRadius:
+                              BorderRadius.circular(12), // Rounded edges
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            DropdownButton<String>(
+                              value: filterBy,
+                              items: [
+                                DropdownMenuItem(
+                                  value: 'trans_date',
+                                  child: Text(
+                                    'Transaction Date',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium, // Apply theme text style
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'items_count',
+                                  child: Text(
+                                    'Items Count',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium, // Apply theme text style
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  filterBy = value!;
+                                  sortTransactions();
+                                });
+                              },
+                              underline: Container(), // Remove underline
+                              dropdownColor: Theme.of(context)
+                                  .cardColor, // Use theme's card color as dropdown background
+                              focusColor: Theme.of(context)
+                                  .primaryColor, // Use theme's primary color as focus color
+                              // Use theme's primary color as hover color
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        isAscending = !isAscending;
+                        sortTransactions();
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: Icon(Icons.point_of_sale),
-              title: Text('Cashier'),
-              onTap: () {
-                setState(() {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Cashier(),
+            Expanded(
+              child: ListView.builder(
+                itemCount:
+                    (currentPage * transactionsPerPage) > transactions.length
+                        ? transactions.length -
+                            ((currentPage - 1) * transactionsPerPage)
+                        : transactionsPerPage,
+                itemBuilder: (context, index) {
+                  final transactionIndex =
+                      (currentPage - 1) * transactionsPerPage + index;
+                  final transaction = transactions[transactionIndex];
+                  final itemsCount = transaction['Items'].length;
+                  final DateTime transDate =
+                      DateTime.parse(transaction['trans_date']);
+                  final String formattedDate =
+                      DateFormat('dd/MM/yyyy').format(transDate);
+                  final String formattedTime =
+                      DateFormat('HH:mm').format(transDate);
+                  return Card(
+                    margin: EdgeInsets.all(10),
+                    child: ListTile(
+                      title: Text('Transaction ID: ${transaction['_id']}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Items Count: $itemsCount'),
+                          Text('Date: $formattedDate $formattedTime'),
+                          Text('Status: ${transaction['status']}'),
+                        ],
+                      ),
+                      onTap: () {
+                        _showTransactionDetailDialog(context, transaction);
+                      },
                     ),
                   );
-                });
-              },
+                },
+              ),
             ),
-            ListTile(
-              leading: Icon(Icons.history),
-              title: Text('Transaction History'),
-              onTap: () {},
-            ),
-            Spacer(),
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Log Out'),
-              onTap: () {
-                showLogoutConfirmationDialog(context);
-              },
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: currentPage > 1
+                        ? () {
+                            setState(() {
+                              currentPage--;
+                            });
+                          }
+                        : null,
+                    child: Text('Previous'),
+                  ),
+                  Text('Page $currentPage of $totalPages'),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: currentPage < totalPages
+                        ? () {
+                            setState(() {
+                              currentPage++;
+                            });
+                          }
+                        : null,
+                    child: Text('Next'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                DropdownButton<String>(
-                  value: filterBy,
-                  items: [
-                    DropdownMenuItem(
-                      value: 'trans_date',
-                      child: Text('Transaction Date'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'items_count',
-                      child: Text('Items Count'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      filterBy = value!;
-                      sortTransactions();
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      isAscending = !isAscending;
-                      sortTransactions();
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount:
-                  (currentPage * transactionsPerPage) > transactions.length
-                      ? transactions.length -
-                          ((currentPage - 1) * transactionsPerPage)
-                      : transactionsPerPage,
-              itemBuilder: (context, index) {
-                final transactionIndex =
-                    (currentPage - 1) * transactionsPerPage + index;
-                final transaction = transactions[transactionIndex];
-                final itemsCount = transaction['Items'].length;
-                final DateTime transDate =
-                    DateTime.parse(transaction['trans_date']);
-                final String formattedDate =
-                    DateFormat('dd/MM/yyyy').format(transDate);
-                final String formattedTime =
-                    DateFormat('HH:mm').format(transDate);
-                return Card(
-                  margin: EdgeInsets.all(10),
-                  child: ListTile(
-                    title: Text('Transaction ID: ${transaction['_id']}'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Items Count: $itemsCount'),
-                        Text('Date: $formattedDate $formattedTime'),
-                        Text('Status: ${transaction['status']}'),
-                      ],
-                    ),
-                    onTap: () {
-                      _showTransactionDetailDialog(context, transaction);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: currentPage > 1
-                      ? () {
-                          setState(() {
-                            currentPage--;
-                          });
-                        }
-                      : null,
-                  child: Text('Previous'),
-                ),
-                Text('Page $currentPage of $totalPages'),
-                ElevatedButton(
-                  onPressed: currentPage < totalPages
-                      ? () {
-                          setState(() {
-                            currentPage++;
-                          });
-                        }
-                      : null,
-                  child: Text('Next'),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
