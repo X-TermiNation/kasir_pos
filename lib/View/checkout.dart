@@ -46,11 +46,13 @@ Future<Uint8List> generateQrImage(String data) async {
 
 class PaymentDialog extends StatefulWidget {
   final double total;
+  final double subtotal;
   final VoidCallback onClearCart;
   final List<CartItem> cartItems;
 
   PaymentDialog({
     required this.total,
+    required this.subtotal,
     required this.onClearCart,
     required this.cartItems,
   });
@@ -151,17 +153,77 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   },
                 ),
               ),
-              Text.rich(
-                TextSpan(
-                  text: 'Total: ',
-                  children: [
-                    TextSpan(
-                      text:
-                          '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Text(
+                      "Subtotal: ",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child: Text(
+                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal)}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ],
+                  )
+                ],
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Text(
+                      "Tax (11%): ",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child: Text(
+                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal)}',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  )
+                ],
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
                 ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Text(
+                      "Total: ",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child: Text(
+                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  )
+                ],
               ),
               SizedBox(height: 20),
               Expanded(

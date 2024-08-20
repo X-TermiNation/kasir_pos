@@ -220,7 +220,7 @@ class _CashierState extends State<Cashier> {
                 children: [
                   // Left side: List of items with search bar
                   Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: Container(
                       padding: EdgeInsets.all(16.0),
                       child: Column(
@@ -295,18 +295,17 @@ class _CashierState extends State<Cashier> {
                     ),
                   ),
                   Container(
-                    width: 1, // adjust the width of the border
+                    width: 1,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Theme.of(context)
-                            .dividerColor, // use the theme's divider color
-                        width: 1, // adjust the width of the border
+                        color: Theme.of(context).dividerColor,
+                        width: 1,
                       ),
                     ),
                   ),
                   // Right side: Cart
                   Expanded(
-                    flex: 3,
+                    flex: 2,
                     child: Container(
                       padding: EdgeInsets.all(16.0),
                       child: Column(
@@ -395,6 +394,7 @@ class _CashierState extends State<Cashier> {
                                       MaterialPageRoute(
                                         builder: (context) => PaymentDialog(
                                           total: total,
+                                          subtotal: subtotal,
                                           onClearCart: _clearCart,
                                           cartItems: _cartItems,
                                         ),
@@ -545,8 +545,12 @@ class ItemCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
+                "Pic",
+                style: TextStyle(fontSize: 120),
+              ),
+              Text(
                 item.nama_barang,
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(context).textTheme.labelLarge,
               ),
             ],
           ),
@@ -633,6 +637,11 @@ class _CartItemRowState extends State<CartItemRow> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
+        ),
+      ),
       padding: EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         children: [
