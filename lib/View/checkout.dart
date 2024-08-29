@@ -136,19 +136,54 @@ class _PaymentDialogState extends State<PaymentDialog> {
             children: [
               Text('Cart Items:'),
               Container(
-                height: 200, // Adjust as needed
+                height: 400,
                 child: ListView.builder(
                   itemCount: widget.cartItems.length,
                   itemBuilder: (context, index) {
                     final item = widget.cartItems[index];
-                    return ListTile(
-                      title: Text(item.item.nama_barang),
-                      subtitle: item.priceWithDiscount != null
-                          ? Text(
-                              'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}      Diskon:${item.discountpercentage}%')
-                          : Text(
-                              'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}'),
-                      trailing: Text('Qty: ${item.quantity}'),
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                              width: 1.0),
+                        ),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        children: [
+                          // Pic placeholder
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              width: 200,
+                              height:
+                                  120.0, // Adjust this value for the desired size
+                              color: Colors
+                                  .grey[300], // Placeholder background color
+                              child: Center(
+                                child: Text(
+                                  "Pic", // Replace this with an actual Image widget when ready
+                                  style: TextStyle(
+                                    fontSize: 24.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          ListTile(
+                            title: Text(item.item.nama_barang),
+                            subtitle: item.priceWithDiscount != null
+                                ? Text(
+                                    'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}      Diskon: ${item.discountpercentage}%')
+                                : Text(
+                                    'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}'),
+                            trailing: Text('Qty: ${item.quantity}'),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -188,7 +223,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   Padding(
                     padding: EdgeInsets.only(right: 20),
                     child: Text(
-                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal)}',
+                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal * 11 / 100)}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   )
