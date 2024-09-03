@@ -68,6 +68,7 @@ Future<Map<String, dynamic>?> addTrans(
   String desc,
   List<Map<String, dynamic>> items,
   String status,
+  double grand_total,
   BuildContext context,
 ) async {
   final dataStorage = GetStorage();
@@ -91,6 +92,7 @@ Future<Map<String, dynamic>?> addTrans(
       'delivery': delivery,
       'desc': desc,
       'status': status,
+      'grand_total': grand_total,
       'Items': items,
     };
 

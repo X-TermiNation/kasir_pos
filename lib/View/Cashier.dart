@@ -463,9 +463,9 @@ class _CashierState extends State<Cashier> {
     double subtotal = 0.0;
     for (CartItem cartItem in _cartItems) {
       if (cartItem.priceWithDiscount != null) {
-        subtotal += cartItem.priceWithDiscount!;
+        subtotal += (cartItem.priceWithDiscount!).roundToDouble();
       } else {
-        subtotal += cartItem.priceWithoutDiscount;
+        subtotal += (cartItem.priceWithoutDiscount).roundToDouble();
       }
     }
     return subtotal;
@@ -473,7 +473,8 @@ class _CashierState extends State<Cashier> {
 
   double _calculateTotal() {
     // For now, total is the same as subtotal
-    double totals = _calculateSubtotal() + _calculateSubtotal() * (11 / 100);
+    double totals = (_calculateSubtotal() + _calculateSubtotal() * (11 / 100))
+        .roundToDouble();
     return totals;
   }
 
@@ -838,7 +839,8 @@ class _CartItemRowState extends State<CartItemRow> {
   }
 
   double _calculateTotalWithoutDiscount() {
-    double hargaSatuan = (_selectedSatuan['harga_satuan'] ?? 0.0).toDouble();
+    double hargaSatuan =
+        ((_selectedSatuan['harga_satuan'] ?? 0.0).toDouble()).roundToDouble();
     return hargaSatuan * widget.cartItem.quantity;
   }
 
@@ -847,7 +849,8 @@ class _CartItemRowState extends State<CartItemRow> {
       double total = _calculateTotalWithoutDiscount();
       double discountPercentage =
           (_selectedDiskon!['persentase_diskon'] ?? 0) / 100;
-      double discountAmount = total - (total * discountPercentage);
+      double discountAmount =
+          (total - (total * discountPercentage)).roundToDouble();
       return discountAmount;
     }
     return 0.0;

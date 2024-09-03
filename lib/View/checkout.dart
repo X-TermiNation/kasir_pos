@@ -247,7 +247,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   Padding(
                     padding: EdgeInsets.only(left: 20),
                     child: Text(
-                      "Total: ",
+                      "Grand Total: ",
                       style: TextStyle(fontSize: 15),
                     ),
                   ),
@@ -421,7 +421,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
         if (_custAddressController.text.isNotEmpty) {
           //transaksi
           var response = await addTrans(payment, delivery, _noteController.text,
-              data_item, status, context);
+              data_item, status, widget.total, context);
           var transData = response?['data'];
           final dataStorage = GetStorage();
           String id_cabang = dataStorage.read('id_cabang');
@@ -465,7 +465,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
       } else {
         //transaksi
         var response = await addTrans(payment, delivery, _noteController.text,
-            data_item, status, context);
+            data_item, status, widget.total, context);
         var transData = response?['data'];
         final dataStorage = GetStorage();
         String id_cabang = dataStorage.read('id_cabang');
