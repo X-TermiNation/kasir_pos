@@ -648,149 +648,177 @@ class _CartItemRowState extends State<CartItemRow> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start, // Aligns the content to the top
             children: [
-              Expanded(
-                flex: 3,
-                child: Column(
-                  children: [
-                    // Pic placeholder
-                    Container(
-                      width: double.infinity,
-                      height: 120.0, // Adjust this value for the desired size
-                      color: Colors.grey[300], // Placeholder background color
-                      child: Center(
-                        child: Text(
-                          "Pic", // Replace this with an actual Image widget when ready
-                          style: TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
+              // Pic placeholder
+              Container(
+                width: 120.0, // Fixed width for the image
+                height: 120.0, // Fixed height for the image
+                color: Colors.grey[300], // Placeholder background color
+                child: Center(
+                  child: Text(
+                    "Pic", // Replace this with an actual Image widget when ready
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
                     ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.0), // Spacing between the image and text
+              Expanded(
+                flex: 7,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
                       widget.cartItem.item.nama_barang,
-                      style: TextStyle(fontSize: 18.0),
+                      style: TextStyle(
+                          fontSize: 18.0, fontWeight: FontWeight.bold),
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-              ),
-              Flexible(
-                flex: 2,
-                child: QuantityWidget(
-                  quantity: widget.cartItem.quantity,
-                  jumlahSatuan: _selectedSatuan['jumlah_satuan'] ?? 0,
-                  onQuantityChanged: (newQuantity) {
-                    setState(() {
-                      if (newQuantity <= 0) {
-                        widget.onQuantityChanged(0);
-                      } else {
-                        widget.cartItem.quantity = newQuantity;
-                        _updatePrices();
-                      }
-                    });
-                  },
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<Map<String, dynamic>>(
-                      value:
-                          _selectedSatuan.isNotEmpty ? _selectedSatuan : null,
-                      onChanged: (newValue) {
-                        if (newValue != null) {
-                          if ((newValue['jumlah_satuan'] ?? 0) > 0) {
-                            setState(() {
-                              _selectedSatuan = newValue;
-                              widget.cartItem.selectedSatuan = newValue;
-                              widget.cartItem.quantity = 1;
-                              _updatePrices();
-                            });
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Stok satuan ini habis!'),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      iconSize: 24.0,
-                      icon: Icon(Icons.arrow_drop_down),
-                      style: TextStyle(fontSize: 16.0, color: Colors.black),
-                      isExpanded: true,
-                      items: widget.satuanData
-                          .map<DropdownMenuItem<Map<String, dynamic>>>(
-                              (satuan) {
-                        return DropdownMenuItem<Map<String, dynamic>>(
-                          value: satuan,
-                          child: Text(
-                            '${satuan['nama_satuan']}',
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 5),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<Map<String, dynamic>>(
-                      value: _selectedDiskon,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _selectedDiskon = newValue;
-                          _updatePrices();
-                        });
-                      },
-                      iconSize: 20.0,
-                      icon: Icon(Icons.arrow_drop_down),
-                      style: TextStyle(fontSize: 16.0),
-                      isExpanded: true,
-                      items: [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text(
-                            'No Discount',
-                            style: Theme.of(context).textTheme.labelLarge,
+                    SizedBox(
+                        height:
+                            8.0), // Spacing between the item name and quantity
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: QuantityWidget(
+                            quantity: widget.cartItem.quantity,
+                            jumlahSatuan: _selectedSatuan['jumlah_satuan'] ?? 0,
+                            onQuantityChanged: (newQuantity) {
+                              setState(() {
+                                if (newQuantity <= 0) {
+                                  widget.onQuantityChanged(0);
+                                } else {
+                                  widget.cartItem.quantity = newQuantity;
+                                  _updatePrices();
+                                }
+                              });
+                            },
                           ),
                         ),
-                        ..._diskonList.map((diskon) {
-                          return DropdownMenuItem<Map<String, dynamic>>(
-                            value: diskon,
-                            child: Text(
-                              '${diskon['nama_diskon']}',
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: Theme.of(context).textTheme.labelLarge,
+                        SizedBox(
+                            width:
+                                8.0), // Spacing between QuantityWidget and Satuan
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey),
                             ),
-                          );
-                        }).toList(),
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<Map<String, dynamic>>(
+                                value: _selectedSatuan.isNotEmpty
+                                    ? _selectedSatuan
+                                    : null,
+                                onChanged: (newValue) {
+                                  if (newValue != null) {
+                                    if ((newValue['jumlah_satuan'] ?? 0) > 0) {
+                                      setState(() {
+                                        _selectedSatuan = newValue;
+                                        widget.cartItem.selectedSatuan =
+                                            newValue;
+                                        widget.cartItem.quantity = 1;
+                                        _updatePrices();
+                                      });
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content:
+                                              Text('Stok satuan ini habis!'),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                iconSize: 24.0,
+                                icon: Icon(Icons.arrow_drop_down),
+                                style: TextStyle(
+                                    fontSize: 16.0, color: Colors.black),
+                                isExpanded: true,
+                                items: widget.satuanData.map<
+                                        DropdownMenuItem<Map<String, dynamic>>>(
+                                    (satuan) {
+                                  return DropdownMenuItem<Map<String, dynamic>>(
+                                    value: satuan,
+                                    child: Text(
+                                      '${satuan['nama_satuan']}',
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge,
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                            width: 8.0), // Spacing between Satuan and Diskon
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blueGrey,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<Map<String, dynamic>>(
+                                value: _selectedDiskon,
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    _selectedDiskon = newValue;
+                                    _updatePrices();
+                                  });
+                                },
+                                iconSize: 20.0,
+                                icon: Icon(Icons.arrow_drop_down),
+                                style: TextStyle(fontSize: 16.0),
+                                isExpanded: true,
+                                items: [
+                                  DropdownMenuItem(
+                                    value: null,
+                                    child: Text(
+                                      'No Discount',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge,
+                                    ),
+                                  ),
+                                  ..._diskonList.map((diskon) {
+                                    return DropdownMenuItem<
+                                        Map<String, dynamic>>(
+                                      value: diskon,
+                                      child: Text(
+                                        '${diskon['nama_diskon']}',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],

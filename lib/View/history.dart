@@ -3,9 +3,9 @@ import 'package:kasir_pos/View/Cashier.dart';
 import 'package:kasir_pos/View/Login.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
+import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:provider/provider.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -30,21 +30,16 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> fetchTransactions() async {
-    final dataStorage = GetStorage();
-    String id_cabang = dataStorage.read('id_cabang');
-    final request =
-        Uri.parse('http://10.0.2.2:3001/transaksi/translist/$id_cabang');
-    final response = await http.get(request);
-    if (response.statusCode == 200 || response.statusCode == 304) {
-      final Map<String, dynamic> jsonData = json.decode(response.body);
-      List<dynamic> data = jsonData["data"];
+    try {
+      final data = await getTrans();
       setState(() {
-        transactions = data.cast<Map<String, dynamic>>();
+        transactions = data;
         filteredTransactions = transactions;
-        sortTransactions();
+        sortTransactions(); // Sort the transactions after fetching
       });
-    } else {
-      print("Failed to load data: ${response.statusCode}");
+    } catch (e) {
+      print("Error fetching transactions: $e");
+      CustomToast(message: "Error fetching transactions");
     }
   }
 
@@ -69,10 +64,43 @@ class _HistoryPageState extends State<HistoryPage> {
 
   void _filterTransactions(String query) {
     setState(() {
-      filteredTransactions = transactions.where((transaction) {
-        return transaction.values
-            .any((value) => value.toString().toLowerCase().contains(query));
-      }).toList();
+      if (query.isEmpty) {
+        filteredTransactions =
+            transactions; // Reset the filtered list when the query is empty
+      } else {
+        filteredTransactions = transactions.where((transaction) {
+          final idMatch = transaction['_id']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase());
+          final dateMatch = DateFormat('dd-MM-yyyy')
+              .format(DateTime.parse(transaction['trans_date']))
+              .toLowerCase()
+              .contains(query.toLowerCase());
+          final paymentMethodMatch = transaction['payment_method']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase());
+          final deliveryMatch = (transaction['delivery'] ? 'yes' : 'no')
+              .toLowerCase()
+              .contains(query.toLowerCase());
+          final grandTotalMatch = transaction['grand_total']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase());
+          final statusMatch = transaction['status']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase());
+
+          return idMatch ||
+              dateMatch ||
+              paymentMethodMatch ||
+              deliveryMatch ||
+              grandTotalMatch ||
+              statusMatch;
+        }).toList();
+      }
     });
   }
 
@@ -202,43 +230,15 @@ class _HistoryPageState extends State<HistoryPage> {
                       ),
                       DataColumn(
                         label: Text('Payment Method'),
-                        onSort: (index, ascending) {
-                          setState(() {
-                            filterBy = 'payment_method';
-                            isAscending = ascending;
-                            sortTransactions();
-                          });
-                        },
                       ),
                       DataColumn(
                         label: Text('Delivery'),
-                        onSort: (index, ascending) {
-                          setState(() {
-                            filterBy = 'delivery';
-                            isAscending = ascending;
-                            sortTransactions();
-                          });
-                        },
                       ),
                       DataColumn(
                         label: Text('Grand Total'),
-                        onSort: (index, ascending) {
-                          setState(() {
-                            filterBy = 'grand_total';
-                            isAscending = ascending;
-                            sortTransactions();
-                          });
-                        },
                       ),
                       DataColumn(
                         label: Text('Status'),
-                        onSort: (index, ascending) {
-                          setState(() {
-                            filterBy = 'status';
-                            isAscending = ascending;
-                            sortTransactions();
-                          });
-                        },
                       ),
                       DataColumn(
                         label: Text('Action'),
@@ -315,7 +315,9 @@ class _HistoryPageState extends State<HistoryPage> {
                         padding: const EdgeInsets.all(16.0),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surface, // Background color from theme
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -331,39 +333,111 @@ class _HistoryPageState extends State<HistoryPage> {
                             children: [
                               Text(
                                 'Transaction Details',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                        fontWeight: FontWeight
+                                            .bold), // TextStyle from theme
                               ),
                               SizedBox(height: 10),
                               Text(
-                                  'Transaction ID: ${selectedTransaction!['_id']}'),
+                                'Transaction ID: ${selectedTransaction!['_id']}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
                               Text(
-                                  'Date: ${selectedTransaction!['trans_date']}'),
+                                'Date: ${DateFormat('dd-MM-yyyy').format(DateTime.parse(selectedTransaction!['trans_date']))}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
                               Text(
-                                  'Payment Method: ${selectedTransaction!['payment_method']}'),
+                                'Grand Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedTransaction!['grand_total'] ?? 0.0)}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
                               Text(
-                                  'Delivery: ${selectedTransaction!['delivery'] ? "Yes" : "No"}'),
+                                'Payment Method: ${selectedTransaction!['payment_method']}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
                               Text(
-                                  'Description: ${selectedTransaction!['desc'] ?? "N/A"}'),
-                              Text('Status: ${selectedTransaction!['status']}'),
+                                'Delivery: ${selectedTransaction!['delivery'] ? "Yes" : "No"}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
+                              Text(
+                                'Description: ${selectedTransaction!['desc'] ?? "N/A"}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
+                              Text(
+                                'Status: ${selectedTransaction!['status']}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge, // TextStyle from theme
+                              ),
                               SizedBox(height: 20),
-                              Text('Items:',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                'Items:',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ), // Bold text from theme
+                              ),
                               ...selectedTransaction!['Items']
                                   .map<Widget>((item) {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Name: ${item['nama_barang']}'),
-                                    Text('Satuan: ${item['id_satuan']}'),
                                     Text(
-                                        'Satuan Price: ${item['satuan_price']}'),
-                                    Text('Quantity: ${item['trans_qty']}'),
+                                      'Name: ${item['nama_barang']}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge, // TextStyle from theme
+                                    ),
                                     Text(
-                                        'Discount: ${item['persentase_diskon'] ?? 0}%'),
-                                    Text('Total Price: ${item['total_price']}'),
-                                    Divider(),
+                                      'Satuan: ${item['id_satuan']}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge, // TextStyle from theme
+                                    ),
+                                    Text(
+                                      'Satuan Price: ${item['satuan_price']}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge, // TextStyle from theme
+                                    ),
+                                    Text(
+                                      'Quantity: ${item['trans_qty']}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge, // TextStyle from theme
+                                    ),
+                                    Text(
+                                      'Discount: ${item['persentase_diskon'] ?? 0}%',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge, // TextStyle from theme
+                                    ),
+                                    Text(
+                                      'Total Price: ${item['total_price']}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge, // TextStyle from theme
+                                    ),
+                                    Divider(
+                                      color: Theme.of(context)
+                                          .dividerColor, // Divider color from theme
+                                    ),
                                   ],
                                 );
                               }).toList(),
@@ -374,7 +448,15 @@ class _HistoryPageState extends State<HistoryPage> {
                                     selectedTransaction = null;
                                   });
                                 },
-                                child: Text('Clear'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .primary, // Button color from theme
+                                ),
+                                child: Text(
+                                  'Clear',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ],
                           ),

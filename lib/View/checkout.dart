@@ -130,140 +130,229 @@ class _PaymentDialogState extends State<PaymentDialog> {
           title: Text('Confirm Payment'),
         ),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Cart Items:'),
-              Container(
-                height: 400,
-                child: ListView.builder(
-                  itemCount: widget.cartItems.length,
-                  itemBuilder: (context, index) {
-                    final item = widget.cartItems[index];
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                              color: Theme.of(context).dividerColor,
-                              width: 1.0),
-                        ),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Column(
-                        children: [
-                          // Pic placeholder
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              width: 200,
-                              height:
-                                  120.0, // Adjust this value for the desired size
-                              color: Colors
-                                  .grey[300], // Placeholder background color
-                              child: Center(
-                                child: Text(
-                                  "Pic", // Replace this with an actual Image widget when ready
-                                  style: TextStyle(
-                                    fontSize: 24.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black54,
-                                  ),
-                                ),
+            padding: const EdgeInsets.all(16.0),
+            child: Expanded(
+                child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Cart Items:'),
+                  Container(
+                    height: 400,
+                    child: ListView.builder(
+                      itemCount: widget.cartItems.length,
+                      itemBuilder: (context, index) {
+                        final item = widget.cartItems[index];
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                                width: 1.0,
                               ),
                             ),
                           ),
-                          ListTile(
-                            title: Text(item.item.nama_barang),
-                            subtitle: item.priceWithDiscount != null
-                                ? Text(
-                                    'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}      Diskon: ${item.discountpercentage}%')
-                                : Text(
-                                    'Price: \Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}'),
-                            trailing: Text('Qty: ${item.quantity}'),
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 120.0,
+                                height: 120.0,
+                                color: Colors.grey[300],
+                                child: Center(
+                                  child: Text(
+                                    "Pic", // Replace this with an actual Image widget when ready
+                                    style: TextStyle(
+                                      fontSize: 24.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 16.0),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.item.nama_barang,
+                                      style: TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.0),
+                                    if (item.priceWithDiscount != null)
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Price:',
+                                              style: TextStyle(fontSize: 16.0),
+                                            ),
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    '\Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}',
+                                                    style: TextStyle(
+                                                      fontSize: 16.0,
+                                                      color: Colors.red,
+                                                      decoration: TextDecoration
+                                                          .lineThrough,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Text(
+                                                '\Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithDiscount)}',
+                                                style: TextStyle(
+                                                  fontSize: 16.0,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.green,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Price:',
+                                              style: TextStyle(fontSize: 16.0),
+                                            ),
+                                          ),
+                                          Text(
+                                            '\Rp.${NumberFormat('#,###.00', 'id_ID').format(item.priceWithoutDiscount)}',
+                                            style: TextStyle(
+                                              fontSize: 16.0,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    SizedBox(height: 4.0),
+                                    if (item.discountpercentage != null)
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Discount:',
+                                              style: TextStyle(fontSize: 16.0),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${item.discountpercentage}%',
+                                            style: TextStyle(fontSize: 16.0),
+                                          ),
+                                        ],
+                                      ),
+                                    SizedBox(height: 4.0),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'Qty:',
+                                            style: TextStyle(fontSize: 16.0),
+                                          ),
+                                        ),
+                                        Text(
+                                          '${item.quantity}',
+                                          style: TextStyle(fontSize: 16.0),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        );
+                      },
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Text(
+                          "Subtotal: ",
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: Text(
-                      "Subtotal: ",
-                      style: TextStyle(fontSize: 15),
+                      Padding(
+                        padding: EdgeInsets.only(right: 20),
+                        child: Text(
+                          '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal)}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Text(
+                          "Tax (11%): ",
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(right: 20),
+                        child: Text(
+                          '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal * 11 / 100)}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Container(
+                    height: 2,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 1,
+                      ),
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.only(right: 20),
-                    child: Text(
-                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal)}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  )
-                ],
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: Text(
-                      "Tax (11%): ",
-                      style: TextStyle(fontSize: 15),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Text(
+                          "Grand Total: ",
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(right: 20),
+                        child: Text(
+                          '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    ],
                   ),
-                  Padding(
-                    padding: EdgeInsets.only(right: 20),
-                    child: Text(
-                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.subtotal * 11 / 100)}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  )
-                ],
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              Container(
-                height: 2,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                    width: 1,
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: Text(
-                      "Grand Total: ",
-                      style: TextStyle(fontSize: 15),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(right: 20),
-                    child: Text(
-                      '\Rp.${NumberFormat('#,###.00', 'id_ID').format(widget.total)}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  )
-                ],
-              ),
-              SizedBox(height: 20),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
+                  SizedBox(height: 20),
+                  Column(
                     children: [
                       Text('Select Payment Method:'),
                       Row(
@@ -405,11 +494,9 @@ class _PaymentDialogState extends State<PaymentDialog> {
                       ),
                     ],
                   ),
-                ),
-              )
-            ],
-          ),
-        ),
+                ],
+              ),
+            ))),
       ),
     );
   }
