@@ -436,7 +436,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                       ),
                                     ),
                                   ],
-                                ), // Show a loading indicator while the QR code is being fetched
+                                ), //loading bar
                         ),
                       ] else ...[
                         SizedBox(height: 20),
