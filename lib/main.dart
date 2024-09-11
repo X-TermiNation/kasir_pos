@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Kasir Pos',
       theme: Provider.of<ThemeManager>(context).getTheme(),
       home: const Login(),
     );

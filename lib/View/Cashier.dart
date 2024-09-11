@@ -349,10 +349,14 @@ class _CashierState extends State<Cashier> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Subtotal:'),
                                 Text(
-                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal)}',
+                                  'Subtotal:',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
+                                Text(
+                                    '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal)}',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -362,10 +366,13 @@ class _CashierState extends State<Cashier> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Tax (11%):'),
+                                Text('Tax (11%):',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
                                 Text(
-                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal * (11 / 100))}',
-                                ),
+                                    '\Rp.${NumberFormat('#,###.00', 'id_ID').format(subtotal * (11 / 100))}',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -375,10 +382,13 @@ class _CashierState extends State<Cashier> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Total:'),
+                                Text('Total:',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
                                 Text(
-                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(total)}',
-                                ),
+                                    '\Rp.${NumberFormat('#,###.00', 'id_ID').format(total)}',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),

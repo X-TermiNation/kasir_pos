@@ -407,36 +407,80 @@ class _PaymentDialogState extends State<PaymentDialog> {
                               ? CircularProgressIndicator()
                               : Column(
                                   children: [
-                                    Text('Scan this QR Code'),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        border: Border(
-                                          top: BorderSide(
-                                              color: Colors.grey, width: 1.0),
-                                        ),
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: FutureBuilder<Uint8List>(
-                                          future: generateQrImage(qrCodeUrl!),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return CircularProgressIndicator();
-                                            } else if (snapshot.hasError) {
-                                              return Text(
-                                                  'Error generating QR code');
-                                            } else {
-                                              return Image.memory(
-                                                  snapshot.data!);
-                                            }
+                                    Text('Press the button to view QR Code'),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        // Show a dialog with the QR code when the button is pressed
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: Text(
+                                                'QR Code',
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              content: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    "a/n xxx xxx xxx",
+                                                    style: TextStyle(
+                                                        fontSize: 30,
+                                                        color: Colors.black,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  FutureBuilder<Uint8List>(
+                                                    future: generateQrImage(
+                                                        qrCodeUrl!),
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      if (snapshot
+                                                              .connectionState ==
+                                                          ConnectionState
+                                                              .waiting) {
+                                                        return CircularProgressIndicator();
+                                                      } else if (snapshot
+                                                          .hasError) {
+                                                        return Text(
+                                                            'Error generating QR code'); // Handle error
+                                                      } else {
+                                                        return SizedBox(
+                                                          width: 500,
+                                                          height: 500,
+                                                          child: Image.memory(
+                                                              snapshot
+                                                                  .data!), // Display the QR code
+                                                        );
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                              actions: <Widget>[
+                                                TextButton(
+                                                  child: Text('Close'),
+                                                  onPressed: () {
+                                                    Navigator.of(context)
+                                                        .pop(); // Close the dialog
+                                                  },
+                                                ),
+                                              ],
+                                            );
                                           },
-                                        ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                      ),
+                                      child: Text(
+                                        'Show QR Code',
+                                        style: TextStyle(color: Colors.white),
                                       ),
                                     ),
                                   ],
-                                ), //loading bar
+                                ),
                         ),
                       ] else ...[
                         SizedBox(height: 20),
