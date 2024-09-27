@@ -142,6 +142,7 @@ Future<List<Map<String, dynamic>>> getTrans() async {
 //add delivery
 Future<Map<String, dynamic>?> addDelivery(
   String alamat_tujuan,
+  String no_telp_cust,
   String transaksi_id,
   BuildContext context,
 ) async {
@@ -151,6 +152,7 @@ Future<Map<String, dynamic>?> addDelivery(
   try {
     var DeliveryData = {
       'alamat_tujuan': alamat_tujuan,
+      'no_telp_cust': no_telp_cust,
       'transaksi_id': transaksi_id,
     };
     final url = 'http://10.0.2.2:3001/transaksi/addDelivery/$id_cabang';

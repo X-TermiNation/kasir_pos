@@ -6,9 +6,9 @@ import 'package:kasir_pos/view-model-flutter/cabang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:qr/qr.dart';
-import 'dart:typed_data';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 
 Future<Uint8List> generateQrImage(String data) async {
@@ -66,6 +66,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
   bool _isDelivery = false;
   TextEditingController _noteController = TextEditingController();
   TextEditingController _emailinvoiceController = TextEditingController();
+  TextEditingController _custTelpNumberController = TextEditingController();
   TextEditingController _custAddressController = TextEditingController();
   String? qrCodeUrl;
   bool _isLoading = true;
@@ -492,14 +493,27 @@ class _PaymentDialogState extends State<PaymentDialog> {
                       SizedBox(height: 20),
                       Column(
                         children: <Widget>[
-                          _isDelivery
-                              ? TextFormField(
-                                  controller: _custAddressController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Input Alamat Pelanggan',
-                                  ),
-                                )
-                              : Container(),
+                          if (_isDelivery) ...[
+                            TextFormField(
+                              controller: _custAddressController,
+                              decoration: InputDecoration(
+                                labelText: 'Input Alamat Pelanggan',
+                              ),
+                            ),
+                            SizedBox(
+                                height:
+                                    16), // Optional: Add spacing between fields
+                            TextFormField(
+                              controller: _custTelpNumberController,
+                              decoration: InputDecoration(
+                                labelText: 'Input Nomor Telepon Pelanggan',
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                            ),
+                          ]
                         ],
                       ),
                       CheckboxListTile(
@@ -549,7 +563,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
     try {
       //check delivery
       if (delivery) {
-        if (_custAddressController.text.isNotEmpty) {
+        if (_custAddressController.text.isNotEmpty &&
+            _custTelpNumberController.text.isNotEmpty) {
           //transaksi
           var response = await addTrans(payment, delivery, _noteController.text,
               data_item, status, widget.total, context);
@@ -559,6 +574,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
           //delivery
           var responseDeliver = await addDelivery(
               _custAddressController.text.toString(),
+              _custTelpNumberController.text.toString(),
               transData.toString(),
               context);
           print(responseDeliver);
