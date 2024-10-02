@@ -362,8 +362,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                             child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
-                                  _isLoading =
-                                      true; // Start showing loading indicator
+                                  _isLoading = true;
                                   _fetchQRCodeUrl();
                                   _selectedPaymentMethod = 'QRIS';
                                 });
