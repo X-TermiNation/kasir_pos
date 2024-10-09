@@ -526,6 +526,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                             } else {
                               status = "Confirmed";
                             }
+                            print("status DELIVERY: $status");
                           });
                         },
                       ),
