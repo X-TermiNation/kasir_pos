@@ -8,6 +8,8 @@ import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
 import 'package:provider/provider.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 
 final dataStorage = GetStorage();
 String id_gudang = dataStorage.read('id_gudang');
@@ -509,10 +511,22 @@ class _CashierState extends State<Cashier> {
 class Barang {
   final String nama_barang;
   final String id;
+  final String? gambar_barang; // Optional field for the image directory
 
-  Barang({required this.nama_barang, required this.id});
+  Barang({
+    required this.nama_barang,
+    required this.id,
+    this.gambar_barang, // Optional constructor parameter
+  });
+
+  // Factory constructor to create an instance from JSON
   factory Barang.fromJson(Map<String, dynamic> json) {
-    return Barang(nama_barang: json['nama_barang'], id: json['_id']);
+    return Barang(
+      nama_barang: json['nama_barang'],
+      id: json['_id'],
+      gambar_barang:
+          json['gambar_barang'], // Load the image directory from JSON
+    );
   }
 }
 
@@ -538,8 +552,11 @@ class ItemCard extends StatelessWidget {
   final VoidCallback onPressed;
   final int satuanIndex;
 
-  ItemCard(
-      {required this.item, required this.onPressed, required this.satuanIndex});
+  ItemCard({
+    required this.item,
+    required this.onPressed,
+    required this.satuanIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -555,16 +572,44 @@ class ItemCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                "Pic",
-                style: TextStyle(fontSize: 120),
-              ),
+              // Display the item image if available, otherwise show a placeholder
+              if (item.gambar_barang != null && item.gambar_barang!.isNotEmpty)
+                Image.memory(
+                  base64Decode(item.gambar_barang!),
+                  height: 120,
+                  width: 120,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback if the image can't be loaded
+                    return _buildPlaceholderImage();
+                  },
+                )
+              else
+                _buildPlaceholderImage(),
+
+              // Item name
               Text(
                 item.nama_barang,
                 style: Theme.of(context).textTheme.labelLarge,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Placeholder widget to show when the image is null or fails to load
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 120,
+      width: 120,
+      color: Colors.grey[300],
+      child: Center(
+        child: Icon(
+          Icons.image_not_supported,
+          size: 50,
+          color: Colors.grey[600],
         ),
       ),
     );
