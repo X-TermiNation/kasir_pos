@@ -8,7 +8,6 @@ import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
 import 'package:provider/provider.dart';
-import 'dart:typed_data';
 import 'dart:convert';
 
 final dataStorage = GetStorage();
@@ -690,6 +689,16 @@ class _CartItemRowState extends State<CartItemRow> {
     });
   }
 
+  Widget _buildPlaceholderImage() {
+    return Center(
+      child: Icon(
+        Icons.image_not_supported,
+        size: 24,
+        color: Colors.grey[600],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -711,16 +720,21 @@ class _CartItemRowState extends State<CartItemRow> {
                 width: 120.0, // Fixed width for the image
                 height: 120.0, // Fixed height for the image
                 color: Colors.grey[300], // Placeholder background color
-                child: Center(
-                  child: Text(
-                    "Pic", // Replace this with an actual Image widget when ready
-                    style: TextStyle(
-                      fontSize: 24.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ),
+                child: widget.cartItem.item.gambar_barang !=
+                        null // Check if image exists
+                    ? Image.memory(
+                        base64Decode(widget.cartItem.item
+                            .gambar_barang!), // Decode Base64 string
+                        height: 120,
+                        width: 120,
+                        fit: BoxFit
+                            .cover, // Adjust the image to fit the container
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback if the image can't be loaded
+                          return _buildPlaceholderImage();
+                        },
+                      )
+                    : _buildPlaceholderImage(), // If no image, show placeholder
               ),
               SizedBox(width: 8.0), // Spacing between the image and text
               Expanded(

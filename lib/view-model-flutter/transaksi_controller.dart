@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 Future<String?> createqris(int amount, BuildContext context) async {
   try {
@@ -73,7 +75,12 @@ Future<Map<String, dynamic>?> addTrans(
 ) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
-  DateTime trans_date = DateTime.now();
+  // change the timezone here for transaction
+  tz.initializeTimeZones();
+
+  final timezone = tz.getLocation('Asia/Jakarta');
+  DateTime trans_date = tz.TZDateTime.now(timezone);
+  print("Waktu Insert transaksi:$trans_date");
 
   try {
     for (var cartItem in items) {
@@ -86,8 +93,8 @@ Future<Map<String, dynamic>?> addTrans(
     // Prepare transaction data
     final transData = {
       'id_cabang': id_cabang,
-      'trans_date':
-          trans_date.toIso8601String(), // Ensure date is properly formatted
+      'trans_date': DateFormat('yyyy-MM-ddTHH:mm:ss')
+          .format(trans_date), // Ensure date is properly formatted
       'payment_method': payment_method,
       'delivery': delivery,
       'desc': desc,
@@ -148,7 +155,6 @@ Future<Map<String, dynamic>?> addDelivery(
 ) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
-  DateTime trans_date = DateTime.now();
   try {
     var DeliveryData = {
       'alamat_tujuan': alamat_tujuan,
@@ -187,7 +193,7 @@ Future<Map<String, dynamic>> generateInvoice(
     List<Map<String, dynamic>> items,
     BuildContext context) async {
   try {
-    final DateFormat formatter = DateFormat('dd/MM/yyyy');
+    final DateFormat formatter = DateFormat('yyyy-MM-ddTHH:mm:ss');
     String dateinvoice = formatter.format(date_trans);
     final response = await http.post(
       Uri.parse('http://10.0.2.2:3000/invoice/generate-invoice'),

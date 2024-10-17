@@ -7,6 +7,8 @@ import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
 import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -341,11 +343,28 @@ class _HistoryPageState extends State<HistoryPage> {
                             ),
                           ],
                           rows: currentTransactions.map((transaction) {
+                            //change the time display in history here
+                            tz.initializeTimeZones();
+
+                            String formatTransactionDate(String utcDateString) {
+                              DateTime utcDate = DateTime.parse(utcDateString);
+
+                              // change the location here
+                              final zone = tz.getLocation('Asia/Jakarta');
+
+                              tz.TZDateTime timezoneDate =
+                                  tz.TZDateTime.from(utcDate, zone);
+
+                              // Format the date using intl package
+                              return DateFormat('EEEE, dd-MM-yyyy HH:mm')
+                                  .format(timezoneDate);
+                            }
+
                             return DataRow(cells: [
                               DataCell(Text(transaction['_id'])),
                               DataCell(
-                                Text(DateFormat('dd-MM-yyyy').format(
-                                    DateTime.parse(transaction['trans_date']))),
+                                Text(formatTransactionDate(
+                                    transaction['trans_date'])),
                               ),
                               DataCell(Text(transaction['payment_method'])),
                               DataCell(

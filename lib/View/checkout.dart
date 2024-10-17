@@ -10,6 +10,9 @@ import 'package:kasir_pos/View/tools/theme_mode.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
+import 'dart:convert';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 Future<Uint8List> generateQrImage(String data) async {
   final qr = QrCode(4, QrErrorCorrectLevel.L);
@@ -122,6 +125,21 @@ class _PaymentDialogState extends State<PaymentDialog> {
     }
   }
 
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 120,
+      width: 120,
+      color: Colors.grey[300],
+      child: Center(
+        child: Icon(
+          Icons.image_not_supported,
+          size: 50,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -160,17 +178,20 @@ class _PaymentDialogState extends State<PaymentDialog> {
                               Container(
                                 width: 120.0,
                                 height: 120.0,
-                                color: Colors.grey[300],
-                                child: Center(
-                                  child: Text(
-                                    "Pic", // Replace this with an actual Image widget when ready
-                                    style: TextStyle(
-                                      fontSize: 24.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                ),
+                                color: Colors
+                                    .grey[300], // Placeholder background color
+                                child: item.item.gambar_barang != null
+                                    ? Image.memory(
+                                        base64Decode(item.item
+                                            .gambar_barang!), // Decode Base64 string
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          // Fallback if the image can't be loaded
+                                          return _buildPlaceholderImage();
+                                        },
+                                      )
+                                    : _buildPlaceholderImage(),
                               ),
                               SizedBox(width: 16.0),
                               Expanded(
@@ -583,7 +604,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
           String nama_cabang = cabang[0]['nama_cabang'];
           String alamat = cabang[0]['alamat'];
           String no_telp = cabang[0]['no_telp'];
-          DateTime invoicedate = DateTime.now();
+          // Initialize timezone data
+          tz.initializeTimeZones();
+          // Set the location to (WIB)
+          final jakarta = tz.getLocation('Asia/Jakarta');
+          DateTime invoicedate = tz.TZDateTime.now(jakarta);
           String isdeliver;
           if (delivery) {
             isdeliver = "yes";
@@ -620,7 +645,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
         String nama_cabang = cabang[0]['nama_cabang'];
         String alamat = cabang[0]['alamat'];
         String no_telp = cabang[0]['no_telp'];
-        DateTime invoicedate = DateTime.now();
+        // Initialize timezone data
+        tz.initializeTimeZones();
+        // Set the location to (WIB)
+        final jakarta = tz.getLocation('Asia/Jakarta');
+        DateTime invoicedate = tz.TZDateTime.now(jakarta);
         String isdeliver;
         if (delivery) {
           isdeliver = "yes";
