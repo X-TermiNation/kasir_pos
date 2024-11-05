@@ -736,7 +736,7 @@ class _CartItemRowState extends State<CartItemRow> {
                       )
                     : _buildPlaceholderImage(), // If no image, show placeholder
               ),
-              SizedBox(width: 8.0), // Spacing between the image and text
+              SizedBox(width: 5.0), // Spacing between the image and text
               Expanded(
                 flex: 7,
                 child: Column(
@@ -754,7 +754,7 @@ class _CartItemRowState extends State<CartItemRow> {
                     Row(
                       children: [
                         Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: QuantityWidget(
                             quantity: widget.cartItem.quantity,
                             jumlahSatuan: _selectedSatuan['jumlah_satuan'] ?? 0,
@@ -770,9 +770,7 @@ class _CartItemRowState extends State<CartItemRow> {
                             },
                           ),
                         ),
-                        SizedBox(
-                            width:
-                                8.0), // Spacing between QuantityWidget and Satuan
+                        SizedBox(width: 5.0),
                         Expanded(
                           flex: 2,
                           child: Container(
@@ -863,7 +861,7 @@ class _CartItemRowState extends State<CartItemRow> {
                                       'No Discount',
                                       style: Theme.of(context)
                                           .textTheme
-                                          .labelLarge,
+                                          .labelMedium,
                                     ),
                                   ),
                                   ..._diskonList.map((diskon) {
@@ -954,8 +952,8 @@ class _CartItemRowState extends State<CartItemRow> {
   }
 }
 
-class QuantityWidget extends StatelessWidget {
-  final int quantity;
+class QuantityWidget extends StatefulWidget {
+  final int quantity; // Use this to set the initial quantity
   final int jumlahSatuan;
   final ValueChanged<int> onQuantityChanged;
 
@@ -964,6 +962,28 @@ class QuantityWidget extends StatelessWidget {
     required this.jumlahSatuan,
     required this.onQuantityChanged,
   });
+
+  @override
+  _QuantityWidgetState createState() => _QuantityWidgetState();
+}
+
+class _QuantityWidgetState extends State<QuantityWidget> {
+  late int tempquantity; // Local state variable to hold quantity
+  final TextEditingController quantityController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    tempquantity = widget.quantity; // Initialize quantity from widget
+    quantityController.text = tempquantity.toString(); // Set initial text
+  }
+
+  @override
+  void dispose() {
+    quantityController
+        .dispose(); // Dispose the controller to avoid memory leaks
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -978,17 +998,54 @@ class QuantityWidget extends StatelessWidget {
               IconButton(
                 icon: Icon(Icons.remove),
                 onPressed: () {
-                  if (quantity >= 1) {
-                    onQuantityChanged(quantity - 1);
-                  } else {}
+                  if (tempquantity > 0) {
+                    setState(() {
+                      tempquantity--; // Decrease quantity
+                      quantityController.text =
+                          tempquantity.toString(); // Update controller
+                    });
+                    widget.onQuantityChanged(tempquantity); // Notify parent
+                  }
                 },
               ),
-              Text(quantity.toString()),
+              SizedBox(
+                width:
+                    50, // Set a fixed width for the TextField to accommodate numbers
+                child: TextField(
+                  controller: quantityController,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  onSubmitted: (value) {
+                    int newQuantity = int.tryParse(value) ?? tempquantity;
+                    if (newQuantity >= 0 &&
+                        newQuantity <= widget.jumlahSatuan) {
+                      setState(() {
+                        tempquantity = newQuantity;
+                        quantityController.text = tempquantity.toString();
+                      });
+                      widget.onQuantityChanged(tempquantity);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Batas Stok Tercapai!')),
+                      );
+                    }
+                  },
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
               IconButton(
                 icon: Icon(Icons.add),
                 onPressed: () {
-                  if (quantity < jumlahSatuan) {
-                    onQuantityChanged(quantity + 1);
+                  if (tempquantity < widget.jumlahSatuan) {
+                    setState(() {
+                      tempquantity++; // Increase quantity
+                      quantityController.text =
+                          tempquantity.toString(); // Update controller
+                    });
+                    widget.onQuantityChanged(tempquantity); // Notify parent
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Batas Stok Tercapai!')),
@@ -998,7 +1055,7 @@ class QuantityWidget extends StatelessWidget {
               ),
             ],
           ),
-          Text('Stock: $jumlahSatuan'),
+          Text('Stock: ${widget.jumlahSatuan}'),
         ],
       ),
     );
