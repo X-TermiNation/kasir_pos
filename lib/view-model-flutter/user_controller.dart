@@ -60,6 +60,7 @@ Future<int> loginbtn(String email, String pass) async {
       idcabangglobal = jsonDecode(response.body)['userCabangId'];
       final dataStorage = GetStorage();
       dataStorage.write('id_cabang', idcabangglobal);
+      dataStorage.write('email_login', email);
       await getdatagudang();
       print("ini signcode:$signcode");
       return signcode;

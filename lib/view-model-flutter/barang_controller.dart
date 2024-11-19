@@ -350,9 +350,30 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
   }
 }
 
-void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
-    String action, BuildContext context) async {
+//update stock satuan
+void updatejumlahSatuan(
+  String id_barang,
+  String id_satuan,
+  int jumlah_satuan,
+  String kodeAktivitas,
+  String action,
+  BuildContext context,
+) async {
   try {
+    if (kodeAktivitas != "" && action == 'kurang') {
+      // Insert re-stock history before updating stock quantity
+      await insertHistoryStok(
+        id_barang: id_barang,
+        satuan_id: id_satuan,
+        tanggal_pengisian: DateTime.now(),
+        jumlah_input: jumlah_satuan,
+        jenis_aktivitas: "Keluar",
+        Kode_Aktivitas: kodeAktivitas,
+        id_cabang: GetStorage().read("id_cabang"),
+      );
+    }
+
+    // Update stock quantity
     final satuanUpdatedata = {
       'jumlah_satuan': jumlah_satuan,
       'action': action,
@@ -362,6 +383,7 @@ void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
     String id_gudangs = dataStorage.read('id_gudang');
     final url =
         'http://10.0.2.2:3000/barang/editjumlahsatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+
     final response = await http.put(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -369,7 +391,7 @@ void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
     );
 
     if (response.statusCode == 200) {
-      showToast(context, 'Berhasil menambah data');
+      print('Berhasil menambah data');
     } else {
       showToast(context, "Gagal menambahkan data");
       print('HTTP Error: ${response.statusCode}');
@@ -400,5 +422,47 @@ Future<List<Map<String, dynamic>>> getsatuan(
   } catch (error) {
     showToast(context, "Error: $error");
     return [];
+  }
+}
+
+//insert stock history
+Future<void> insertHistoryStok({
+  required String id_barang,
+  required String satuan_id,
+  required DateTime tanggal_pengisian,
+  required int jumlah_input,
+  required String jenis_aktivitas,
+  required String Kode_Aktivitas,
+  required String id_cabang,
+}) async {
+  final getstorage = GetStorage();
+  final String? User_email = getstorage.read('email_login');
+  final url = Uri.parse("http://10.0.2.2:3000/barang/insertHistoryStok");
+
+  final data = {
+    'cabang_id': id_cabang,
+    'barang_id': id_barang,
+    'satuan_id': satuan_id,
+    'tanggal_pengisian': tanggal_pengisian.toIso8601String(),
+    'jumlah_input': jumlah_input,
+    'jenis_aktivitas': jenis_aktivitas,
+    'Kode_Aktivitas': Kode_Aktivitas,
+    'User_email': User_email
+  };
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201) {
+      print("HistoryStok entry inserted successfully");
+    } else {
+      print("Failed to insert HistoryStok entry: ${response.body}");
+    }
+  } catch (error) {
+    print("Error inserting HistoryStok: $error");
   }
 }

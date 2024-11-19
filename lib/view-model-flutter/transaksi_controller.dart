@@ -83,13 +83,6 @@ Future<Map<String, dynamic>?> addTrans(
   print("Waktu Insert transaksi:$trans_date");
 
   try {
-    for (var cartItem in items) {
-      String id_barang = cartItem['id_reference'];
-      String id_satuan = cartItem['id_satuan'];
-      int quantity = cartItem['trans_qty'];
-      updatejumlahSatuan(id_barang, id_satuan, quantity, 'kurang', context);
-    }
-
     // Prepare transaction data
     final transData = {
       'id_cabang': id_cabang,
@@ -110,11 +103,25 @@ Future<Map<String, dynamic>?> addTrans(
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(transData),
     );
+    final responseData = jsonDecode(response.body);
+    final now = DateTime.now().toUtc().add(Duration(hours: 7));
+
+    // Format the time to a readable string in WIB
+    final wibTimestamp = DateFormat('yyyyMMdd_HHmmss').format(now);
+
+    final kodeaktivitas = "KLR_${responseData['_id']}_${wibTimestamp}";
+
+    for (var cartItem in items) {
+      String id_barang = cartItem['id_reference'];
+      String id_satuan = cartItem['id_satuan'];
+      int quantity = cartItem['trans_qty'];
+      updatejumlahSatuan(
+          id_barang, id_satuan, quantity, kodeaktivitas, 'kurang', context);
+    }
 
     // Handle the server response
     if (response.statusCode == 200) {
       showToast(context, 'Berhasil menambah data');
-      final responseData = jsonDecode(response.body);
       return responseData;
     } else {
       showToast(context, "Gagal menambahkan data");
