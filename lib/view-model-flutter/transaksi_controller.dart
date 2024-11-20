@@ -104,12 +104,13 @@ Future<Map<String, dynamic>?> addTrans(
       body: jsonEncode(transData),
     );
     final responseData = jsonDecode(response.body);
+    print("ini hasil transaksi:$responseData");
     final now = DateTime.now().toUtc().add(Duration(hours: 7));
 
     // Format the time to a readable string in WIB
     final wibTimestamp = DateFormat('yyyyMMdd_HHmmss').format(now);
 
-    final kodeaktivitas = "KLR_${responseData['_id']}_${wibTimestamp}";
+    final kodeaktivitas = "KLR_${responseData['data']}_${wibTimestamp}";
 
     for (var cartItem in items) {
       String id_barang = cartItem['id_reference'];
