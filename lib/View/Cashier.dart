@@ -41,7 +41,6 @@ class _CashierState extends State<Cashier> {
 
   void _handleItemPressed(
       List<Map<String, dynamic>> satuanData, Barang item, int satuanIndex) {
-    // Check if the selected index is within bounds
     if (satuanIndex < 0 || satuanIndex >= satuanData.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Index tidak valid')),
@@ -51,7 +50,6 @@ class _CashierState extends State<Cashier> {
 
     bool hasAvailableStock =
         satuanData.any((satuan) => (satuan['jumlah_satuan'] ?? 0) > 0);
-
     bool isSelectedSatuanAvailable =
         (satuanData[satuanIndex]['jumlah_satuan'] ?? 0) > 0;
 
@@ -63,37 +61,36 @@ class _CashierState extends State<Cashier> {
     }
 
     setState(() {
-      CartItem? existingCartItem = _cartItems.firstWhere(
-        (cartItem) => cartItem.item.nama_barang == item.nama_barang,
-        orElse: () => CartItem(
-          item: item,
-          quantity: 0,
-          selectedSatuan: satuanData[0],
-          priceWithoutDiscount: (satuanData[0]['harga_satuan'] ?? 0).toDouble(),
-        ),
+      int maxQuantity = satuanData[satuanIndex]['jumlah_satuan'] ?? 0;
+
+      // Find if the item already exists in the cart
+      int existingIndex = _cartItems.indexWhere(
+        (cartItem) =>
+            cartItem.item.id == item.id &&
+            cartItem.selectedSatuan['id_satuan'] ==
+                satuanData[satuanIndex]['id_satuan'],
       );
 
-      if (existingCartItem.quantity == 0) {
-        existingCartItem.quantity = 1;
-        _cartItems.add(existingCartItem);
-        _satuanDataList.add(satuanData);
-      } else {
-        int currentQuantity = existingCartItem.quantity;
-        int maxQuantity = satuanData[satuanIndex]['jumlah_satuan'] ?? 0;
-
-        if (currentQuantity < maxQuantity) {
-          existingCartItem.quantity += 1;
+      if (existingIndex != -1) {
+        // If item exists, update quantity
+        if (_cartItems[existingIndex].quantity < maxQuantity) {
+          _cartItems[existingIndex].quantity += 1;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Batas Stok Tercapai!')),
           );
         }
+      } else {
+        // If item doesn't exist, add new entry
+        _cartItems.add(CartItem(
+          item: item,
+          quantity: 1,
+          selectedSatuan: satuanData[satuanIndex],
+          priceWithoutDiscount:
+              (satuanData[satuanIndex]['harga_satuan'] ?? 0).toDouble(),
+        ));
+        _satuanDataList.add(satuanData);
       }
-
-      // Update price based on selected satuan
-      existingCartItem.selectedSatuan = satuanData[satuanIndex];
-      existingCartItem.priceWithoutDiscount =
-          (satuanData[satuanIndex]['harga_satuan'] ?? 0).toDouble();
 
       _updateSubtotal();
     });
@@ -256,8 +253,7 @@ class _CashierState extends State<Cashier> {
                                   onPressed: () async {
                                     List<Map<String, dynamic>> satuanData =
                                         await getsatuan(item.id, context);
-                                    _handleItemPressed(satuanData, item,
-                                        index); // Pass index to _handleItemPressed
+                                    _handleItemPressed(satuanData, item, index);
                                     _updateSubtotal();
                                   },
                                 );
@@ -864,7 +860,17 @@ class _CartItemRowState extends State<CartItemRow> {
                                           .labelMedium,
                                     ),
                                   ),
-                                  ..._diskonList.map((diskon) {
+                                  ..._diskonList.where((diskon) {
+                                    DateTime today = DateTime.now();
+                                    DateTime startDate =
+                                        DateTime.parse(diskon['start_date']);
+                                    DateTime endDate =
+                                        DateTime.parse(diskon['end_date']);
+
+                                    return diskon['isActive'] == true &&
+                                        today.isAfter(startDate) &&
+                                        today.isBefore(endDate);
+                                  }).map((diskon) {
                                     return DropdownMenuItem<
                                         Map<String, dynamic>>(
                                       value: diskon,
@@ -979,6 +985,17 @@ class _QuantityWidgetState extends State<QuantityWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant QuantityWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.quantity != oldWidget.quantity) {
+      setState(() {
+        tempquantity = widget.quantity;
+        quantityController.text = tempquantity.toString(); // Ensure UI updates
+      });
+    }
+  }
+
+  @override
   void dispose() {
     quantityController
         .dispose(); // Dispose the controller to avoid memory leaks
@@ -1009,8 +1026,7 @@ class _QuantityWidgetState extends State<QuantityWidget> {
                 },
               ),
               SizedBox(
-                width:
-                    50, // Set a fixed width for the TextField to accommodate numbers
+                width: 50, // Fixed width for TextField
                 child: TextField(
                   controller: quantityController,
                   textAlign: TextAlign.center,

@@ -114,14 +114,12 @@ class _PaymentDialogState extends State<PaymentDialog> {
       final url = await createqris(widget.total.toInt(), context);
       setState(() {
         qrCodeUrl = url;
-        _isLoading = false; // Stop showing loading indicator
+        _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _isLoading =
-            false; // Stop showing loading indicator even if there's an error
+        _isLoading = false;
       });
-      // Handle error (e.g., show an error message)
     }
   }
 
