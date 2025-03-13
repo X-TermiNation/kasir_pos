@@ -1033,6 +1033,7 @@ class _QuantityWidgetState extends State<QuantityWidget> {
                   keyboardType: TextInputType.number,
                   onSubmitted: (value) {
                     int newQuantity = int.tryParse(value) ?? tempquantity;
+
                     if (newQuantity >= 0 &&
                         newQuantity <= widget.jumlahSatuan) {
                       setState(() {
@@ -1041,6 +1042,8 @@ class _QuantityWidgetState extends State<QuantityWidget> {
                       });
                       widget.onQuantityChanged(tempquantity);
                     } else {
+                      // Revert to previous valid quantity
+                      quantityController.text = tempquantity.toString();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Batas Stok Tercapai!')),
                       );
