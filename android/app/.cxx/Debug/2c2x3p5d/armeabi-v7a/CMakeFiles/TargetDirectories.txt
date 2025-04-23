@@ -1,0 +1,2 @@
+D:/kuliah/Tugas_Akhir/kasir_pos/android/app/.cxx/Debug/2c2x3p5d/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/kuliah/Tugas_Akhir/kasir_pos/android/app/.cxx/Debug/2c2x3p5d/armeabi-v7a/CMakeFiles/rebuild_cache.dir
