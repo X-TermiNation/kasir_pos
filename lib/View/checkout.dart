@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -72,6 +74,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
   TextEditingController _custTelpNumberController = TextEditingController();
   TextEditingController _custAddressController = TextEditingController();
   String? qrCodeUrl;
+  String? qrBase64;
   bool _isLoading = true;
   List<Map<String, dynamic>> data_item = [];
   String status = "Confirmed";
@@ -113,7 +116,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
     try {
       final url = await createqris(widget.total.toInt(), context);
       setState(() {
-        qrCodeUrl = url;
+        qrBase64 = url;
         _isLoading = false;
       });
     } catch (e) {
@@ -136,6 +139,22 @@ class _PaymentDialogState extends State<PaymentDialog> {
         ),
       ),
     );
+  }
+
+  //qr code
+  Future<Uint8List> fetchQrCodeImage(String qrCodeUrl) async {
+    final response = await http.get(Uri.parse(qrCodeUrl));
+    if (response.statusCode == 200) {
+      return response.bodyBytes; // return the image data as Uint8List
+    } else {
+      throw Exception('Failed to load QR code image');
+    }
+  }
+
+  Uint8List base64ToImage(String base64String) {
+    final uriHeaderRegex = RegExp(r'data:image\/\w+;base64,');
+    final cleanedBase64 = base64String.replaceAll(uriHeaderRegex, '');
+    return base64Decode(cleanedBase64);
   }
 
   @override
@@ -387,13 +406,64 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    _selectedPaymentMethod == 'QRIS'
-                                        ? Colors.blue
-                                        : Colors.grey,
+                                minimumSize: Size(120,
+                                    120), // Keep the button square with fixed size
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      15), // Rounded corners for a softer look
+                                ),
+                                padding: EdgeInsets.all(
+                                    0), // Remove padding to keep it square
+                                backgroundColor: _selectedPaymentMethod ==
+                                        'QRIS'
+                                    ? Theme.of(context)
+                                        .primaryColor // Highlighted for selected button
+                                    : Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[
+                                            800] // Dark background in dark mode for unselected
+                                        : Colors.grey[
+                                            300], // Light grey background for unselected in light mode
+                                elevation:
+                                    15, // Add more elevation for a noticeable shadow effect
+                                shadowColor: Colors.black.withOpacity(
+                                    0.3), // Slight shadow for depth
                               ),
-                              child: Text('QRIS',
-                                  style: TextStyle(color: Colors.white)),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.qr_code_2, // Better icon for QRIS
+                                    size:
+                                        55, // Slightly larger icon for better visibility
+                                    color: _selectedPaymentMethod == 'QRIS'
+                                        ? Colors.white
+                                        : Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                            : Colors
+                                                .black, // Use white text in dark mode for contrast
+                                  ),
+                                  SizedBox(
+                                      height:
+                                          8), // Add space between the icon and text
+                                  Text(
+                                    'QRIS',
+                                    style: TextStyle(
+                                      color: _selectedPaymentMethod == 'QRIS'
+                                          ? Colors.white
+                                          : Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : Colors
+                                                  .black, // Use white text in dark mode for contrast
+                                      fontWeight: FontWeight.bold,
+                                      fontSize:
+                                          16, // Make the text slightly bigger for better readability
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           SizedBox(width: 10),
@@ -407,14 +477,64 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    _selectedPaymentMethod == 'Cash'
-                                        ? Colors.blue
-                                        : Colors.grey,
+                                minimumSize: Size(120,
+                                    120), // Keep the button square with fixed size
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      15), // Rounded corners for a softer look
+                                ),
+                                padding: EdgeInsets.all(
+                                    0), // Remove padding to keep it square
+                                backgroundColor: _selectedPaymentMethod ==
+                                        'Cash'
+                                    ? Theme.of(context)
+                                        .primaryColor // Highlighted for selected button
+                                    : Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[
+                                            800] // Dark background in dark mode for unselected
+                                        : Colors.grey[
+                                            300], // Light grey background for unselected in light mode
+                                elevation:
+                                    15, // Add more elevation for a noticeable shadow effect
+                                shadowColor: Colors.black.withOpacity(
+                                    0.3), // Slight shadow for depth
                               ),
-                              child: Text(
-                                'Cash',
-                                style: TextStyle(color: Colors.white),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons
+                                        .money_rounded, // Updated to a modern money icon
+                                    size:
+                                        55, // Slightly larger icon for better visibility
+                                    color: _selectedPaymentMethod == 'Cash'
+                                        ? Colors.white
+                                        : Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                            : Colors
+                                                .black, // Use white text in dark mode for contrast
+                                  ),
+                                  SizedBox(
+                                      height:
+                                          8), // Add space between the icon and text
+                                  Text(
+                                    'Cash',
+                                    style: TextStyle(
+                                      color: _selectedPaymentMethod == 'Cash'
+                                          ? Colors.white
+                                          : Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : Colors
+                                                  .black, // Use white text in dark mode for contrast
+                                      fontWeight: FontWeight.bold,
+                                      fontSize:
+                                          16, // Make the text slightly bigger for better readability
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -429,66 +549,42 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                     Text('Press the button to view QR Code'),
                                     ElevatedButton(
                                       onPressed: () async {
-                                        // Show a dialog with the QR code when the button is pressed
-                                        showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: Text(
-                                                'QR Code',
-                                                textAlign: TextAlign.center,
-                                              ),
-                                              content: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text(
-                                                    "a/n xxx xxx xxx",
-                                                    style: TextStyle(
-                                                        fontSize: 30,
-                                                        color: Colors.black,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  FutureBuilder<Uint8List>(
-                                                    future: generateQrImage(
-                                                        qrCodeUrl!),
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      if (snapshot
-                                                              .connectionState ==
-                                                          ConnectionState
-                                                              .waiting) {
-                                                        return CircularProgressIndicator();
-                                                      } else if (snapshot
-                                                          .hasError) {
-                                                        return Text(
-                                                            'Error generating QR code'); // Handle error
-                                                      } else {
-                                                        return SizedBox(
-                                                          width: 500,
-                                                          height: 500,
-                                                          child: Image.memory(
-                                                              snapshot
-                                                                  .data!), // Display the QR code
-                                                        );
-                                                      }
+                                        if (qrBase64 != null &&
+                                            qrBase64!.isNotEmpty) {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: Text('QR Code'),
+                                                content: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      "a/n xxx xxx xxx",
+                                                      style: TextStyle(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    SizedBox(height: 20),
+                                                    Image.memory(base64ToImage(
+                                                        qrBase64!)),
+                                                  ],
+                                                ),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    child: Text('Close'),
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
                                                     },
                                                   ),
                                                 ],
-                                              ),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  child: Text('Close'),
-                                                  onPressed: () {
-                                                    Navigator.of(context)
-                                                        .pop(); // Close the dialog
-                                                  },
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
+                                              );
+                                            },
+                                          );
+                                        }
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blue,

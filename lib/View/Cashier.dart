@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:kasir_pos/View/Login.dart';
 import 'package:kasir_pos/View/checkout.dart';
 import 'package:kasir_pos/View/history.dart';
+import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:kasir_pos/view-model-flutter/barang_controller.dart';
 import 'package:kasir_pos/view-model-flutter/diskon_controller.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
@@ -42,9 +43,7 @@ class _CashierState extends State<Cashier> {
   void _handleItemPressed(
       List<Map<String, dynamic>> satuanData, Barang item, int satuanIndex) {
     if (satuanIndex < 0 || satuanIndex >= satuanData.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Index tidak valid')),
-      );
+      showToast(context, "Index tidak valid");
       return;
     }
 
@@ -54,9 +53,8 @@ class _CashierState extends State<Cashier> {
         (satuanData[satuanIndex]['jumlah_satuan'] ?? 0) > 0;
 
     if (!hasAvailableStock && !isSelectedSatuanAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Stock habis untuk barang ini!')),
-      );
+      showToast(context, "Stock habis untuk barang ini!");
+
       return;
     }
 
@@ -255,6 +253,7 @@ class _CashierState extends State<Cashier> {
                                         await getsatuan(item.id, context);
                                     _handleItemPressed(satuanData, item, index);
                                     _updateSubtotal();
+                                    setState(() {});
                                   },
                                 );
                               }).toList(),
@@ -450,13 +449,12 @@ class _CashierState extends State<Cashier> {
                 GetStorage().erase();
                 Navigator.push(
                     context, MaterialPageRoute(builder: (context) => Login()));
-                // Close the dialog
               },
               child: Text('Ya'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); 
               },
               child: Text('Tidak'),
             ),
@@ -479,7 +477,6 @@ class _CashierState extends State<Cashier> {
   }
 
   double _calculateTotal() {
-    // For now, total is the same as subtotal
     double totals = (_calculateSubtotal() + _calculateSubtotal() * (11 / 100))
         .roundToDouble();
     return totals;
