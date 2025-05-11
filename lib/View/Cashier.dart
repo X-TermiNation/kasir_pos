@@ -54,12 +54,14 @@ class _CashierState extends State<Cashier> {
 
     if (!hasAvailableStock && !isSelectedSatuanAvailable) {
       showToast(context, "Stock habis untuk barang ini!");
-
       return;
     }
 
     setState(() {
       int maxQuantity = satuanData[satuanIndex]['jumlah_satuan'] ?? 0;
+
+      // Ensure maxQuantity is a double
+      maxQuantity = maxQuantity.toDouble().toInt();
 
       // Find if the item already exists in the cart
       int existingIndex = _cartItems.indexWhere(
@@ -70,7 +72,7 @@ class _CashierState extends State<Cashier> {
       );
 
       if (existingIndex != -1) {
-        // If item exists, update quantity
+        // If item exists, update quantity and recalculate total price
         if (_cartItems[existingIndex].quantity < maxQuantity) {
           _cartItems[existingIndex].quantity += 1;
         } else {
@@ -78,6 +80,12 @@ class _CashierState extends State<Cashier> {
             SnackBar(content: Text('Batas Stok Tercapai!')),
           );
         }
+
+        // After updating quantity, recalculate the price for the item
+        _cartItems[existingIndex].priceWithoutDiscount =
+            (_cartItems[existingIndex].selectedSatuan['harga_satuan'] ?? 0)
+                    .toDouble() *
+                _cartItems[existingIndex].quantity.toDouble();
       } else {
         // If item doesn't exist, add new entry
         _cartItems.add(CartItem(
@@ -90,6 +98,7 @@ class _CashierState extends State<Cashier> {
         _satuanDataList.add(satuanData);
       }
 
+      // Update subtotal and total after updating the cart
       _updateSubtotal();
     });
   }
@@ -251,9 +260,11 @@ class _CashierState extends State<Cashier> {
                                   onPressed: () async {
                                     List<Map<String, dynamic>> satuanData =
                                         await getsatuan(item.id, context);
-                                    _handleItemPressed(satuanData, item, index);
-                                    _updateSubtotal();
-                                    setState(() {});
+                                    setState(() {
+                                      _handleItemPressed(
+                                          satuanData, item, index);
+                                      _updateSubtotal();
+                                    });
                                   },
                                 );
                               }).toList(),
@@ -454,7 +465,7 @@ class _CashierState extends State<Cashier> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
               },
               child: Text('Tidak'),
             ),
@@ -1057,11 +1068,10 @@ class _QuantityWidgetState extends State<QuantityWidget> {
                 onPressed: () {
                   if (tempquantity < widget.jumlahSatuan) {
                     setState(() {
-                      tempquantity++; // Increase quantity
-                      quantityController.text =
-                          tempquantity.toString(); // Update controller
+                      tempquantity++;
+                      quantityController.text = tempquantity.toString();
                     });
-                    widget.onQuantityChanged(tempquantity); // Notify parent
+                    widget.onQuantityChanged(tempquantity);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Batas Stok Tercapai!')),
