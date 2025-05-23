@@ -11,8 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'dart:typed_data';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -67,8 +65,15 @@ class PaymentDialog extends StatefulWidget {
 }
 
 class _PaymentDialogState extends State<PaymentDialog> {
-  String _selectedPaymentMethod = 'QRIS';
+  //VA Payment & others
+  String? external_id;
+  String? accountNumber;
+  String? bankCode;
+  String? vaName;
+  int? vaAmount;
+  String _selectedPaymentMethod = 'Cash';
   bool _isDelivery = false;
+  //controller
   TextEditingController _noteController = TextEditingController();
   TextEditingController _emailinvoiceController = TextEditingController();
   TextEditingController _custTelpNumberController = TextEditingController();
@@ -84,9 +89,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
   @override
   void initState() {
     super.initState();
-    if (_selectedPaymentMethod == 'QRIS') {
-      _fetchQRCodeUrl();
-    }
     data_item = getCartData(widget.cartItems, widget.total);
   }
 
@@ -112,20 +114,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
     return dataItem;
   }
 
-  Future<void> _fetchQRCodeUrl() async {
-    try {
-      final url = await createqris(widget.total.toInt(), context);
-      setState(() {
-        qrBase64 = url;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   Widget _buildPlaceholderImage() {
     return Container(
       height: 120,
@@ -141,20 +129,42 @@ class _PaymentDialogState extends State<PaymentDialog> {
     );
   }
 
-  //qr code
-  Future<Uint8List> fetchQrCodeImage(String qrCodeUrl) async {
-    final response = await http.get(Uri.parse(qrCodeUrl));
-    if (response.statusCode == 200) {
-      return response.bodyBytes; // return the image data as Uint8List
-    } else {
-      throw Exception('Failed to load QR code image');
-    }
-  }
+  Future<void> _fetchVAInfo() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-  Uint8List base64ToImage(String base64String) {
-    final uriHeaderRegex = RegExp(r'data:image\/\w+;base64,');
-    final cleanedBase64 = base64String.replaceAll(uriHeaderRegex, '');
-    return base64Decode(cleanedBase64);
+    try {
+      final result = await createVA(widget.total.toInt(), context);
+
+      if (result == null ||
+          !result.containsKey('account_number') ||
+          !result.containsKey('bank_code') ||
+          !result.containsKey('name') ||
+          !result.containsKey('amount')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memuat data Virtual Account")),
+        );
+        return;
+      }
+
+      setState(() {
+        accountNumber = result['account_number'];
+        bankCode = result['bank_code'];
+        vaName = result['name'];
+        vaAmount = result['amount'];
+        external_id = result['external_id'];
+      });
+    } catch (e) {
+      print('Error fetching VA info: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Terjadi kesalahan saat mengambil data VA")),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -163,7 +173,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
       theme: Provider.of<ThemeManager>(context).getTheme(),
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Confirm Payment'),
+          title: Text('Checkout Page'),
         ),
         body: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -400,66 +410,46 @@ class _PaymentDialogState extends State<PaymentDialog> {
                             child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
-                                  _isLoading = true;
-                                  _fetchQRCodeUrl();
-                                  _selectedPaymentMethod = 'QRIS';
+                                  _selectedPaymentMethod = 'VA';
                                 });
+                                _fetchVAInfo(); // Panggil saat VA dipilih
                               },
                               style: ElevatedButton.styleFrom(
-                                minimumSize: Size(120,
-                                    120), // Keep the button square with fixed size
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      15), // Rounded corners for a softer look
-                                ),
-                                padding: EdgeInsets.all(
-                                    0), // Remove padding to keep it square
-                                backgroundColor: _selectedPaymentMethod ==
-                                        'QRIS'
-                                    ? Theme.of(context)
-                                        .primaryColor // Highlighted for selected button
+                                minimumSize: Size(120, 120),
+                                backgroundColor: _selectedPaymentMethod == 'VA'
+                                    ? Theme.of(context).primaryColor
                                     : Theme.of(context).brightness ==
                                             Brightness.dark
-                                        ? Colors.grey[
-                                            800] // Dark background in dark mode for unselected
-                                        : Colors.grey[
-                                            300], // Light grey background for unselected in light mode
-                                elevation:
-                                    15, // Add more elevation for a noticeable shadow effect
-                                shadowColor: Colors.black.withOpacity(
-                                    0.3), // Slight shadow for depth
+                                        ? Colors.grey[800]
+                                        : Colors.grey[300],
+                                elevation: 15,
+                                shadowColor: Colors.black.withOpacity(0.3),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
-                                    Icons.qr_code_2, // Better icon for QRIS
-                                    size:
-                                        55, // Slightly larger icon for better visibility
-                                    color: _selectedPaymentMethod == 'QRIS'
+                                    Icons.account_balance,
+                                    size: 55,
+                                    color: _selectedPaymentMethod == 'VA'
                                         ? Colors.white
                                         : Theme.of(context).brightness ==
                                                 Brightness.dark
                                             ? Colors.white
-                                            : Colors
-                                                .black, // Use white text in dark mode for contrast
+                                            : Colors.black,
                                   ),
-                                  SizedBox(
-                                      height:
-                                          8), // Add space between the icon and text
+                                  SizedBox(height: 8),
                                   Text(
-                                    'QRIS',
+                                    'Virtual Account',
                                     style: TextStyle(
-                                      color: _selectedPaymentMethod == 'QRIS'
+                                      color: _selectedPaymentMethod == 'VA'
                                           ? Colors.white
                                           : Theme.of(context).brightness ==
                                                   Brightness.dark
                                               ? Colors.white
-                                              : Colors
-                                                  .black, // Use white text in dark mode for contrast
+                                              : Colors.black,
                                       fontWeight: FontWeight.bold,
-                                      fontSize:
-                                          16, // Make the text slightly bigger for better readability
+                                      fontSize: 16,
                                     ),
                                   ),
                                 ],
@@ -471,54 +461,41 @@ class _PaymentDialogState extends State<PaymentDialog> {
                             child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
-                                  _isLoading = false;
-                                  qrCodeUrl = null;
                                   _selectedPaymentMethod = 'Cash';
+                                  _isLoading = false;
+                                  // Reset VA data kalau pindah metode
+                                  accountNumber = null;
+                                  bankCode = null;
+                                  vaName = null;
+                                  vaAmount = null;
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                minimumSize: Size(120,
-                                    120), // Keep the button square with fixed size
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      15), // Rounded corners for a softer look
-                                ),
-                                padding: EdgeInsets.all(
-                                    0), // Remove padding to keep it square
-                                backgroundColor: _selectedPaymentMethod ==
-                                        'Cash'
-                                    ? Theme.of(context)
-                                        .primaryColor // Highlighted for selected button
-                                    : Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[
-                                            800] // Dark background in dark mode for unselected
-                                        : Colors.grey[
-                                            300], // Light grey background for unselected in light mode
-                                elevation:
-                                    15, // Add more elevation for a noticeable shadow effect
-                                shadowColor: Colors.black.withOpacity(
-                                    0.3), // Slight shadow for depth
+                                minimumSize: Size(120, 120),
+                                backgroundColor:
+                                    _selectedPaymentMethod == 'Cash'
+                                        ? Theme.of(context).primaryColor
+                                        : Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[800]
+                                            : Colors.grey[300],
+                                elevation: 15,
+                                shadowColor: Colors.black.withOpacity(0.3),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
-                                    Icons
-                                        .money_rounded, // Updated to a modern money icon
-                                    size:
-                                        55, // Slightly larger icon for better visibility
+                                    Icons.money_rounded,
+                                    size: 55,
                                     color: _selectedPaymentMethod == 'Cash'
                                         ? Colors.white
                                         : Theme.of(context).brightness ==
                                                 Brightness.dark
                                             ? Colors.white
-                                            : Colors
-                                                .black, // Use white text in dark mode for contrast
+                                            : Colors.black,
                                   ),
-                                  SizedBox(
-                                      height:
-                                          8), // Add space between the icon and text
+                                  SizedBox(height: 8),
                                   Text(
                                     'Cash',
                                     style: TextStyle(
@@ -527,11 +504,9 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                           : Theme.of(context).brightness ==
                                                   Brightness.dark
                                               ? Colors.white
-                                              : Colors
-                                                  .black, // Use white text in dark mode for contrast
+                                              : Colors.black,
                                       fontWeight: FontWeight.bold,
-                                      fontSize:
-                                          16, // Make the text slightly bigger for better readability
+                                      fontSize: 16,
                                     ),
                                   ),
                                 ],
@@ -540,63 +515,72 @@ class _PaymentDialogState extends State<PaymentDialog> {
                           ),
                         ],
                       ),
-                      if (_selectedPaymentMethod == "QRIS") ...[
-                        Center(
-                          child: _isLoading
-                              ? CircularProgressIndicator()
-                              : Column(
-                                  children: [
-                                    Text('Press the button to view QR Code'),
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        if (qrBase64 != null &&
-                                            qrBase64!.isNotEmpty) {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                title: Text('QR Code'),
-                                                content: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      "a/n xxx xxx xxx",
-                                                      style: TextStyle(
-                                                          fontSize: 18,
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                    ),
-                                                    SizedBox(height: 20),
-                                                    Image.memory(base64ToImage(
-                                                        qrBase64!)),
-                                                  ],
+                      if (_selectedPaymentMethod == "VA") ...[
+                        SizedBox(height: 20),
+                        if (_isLoading)
+                          Center(child: CircularProgressIndicator())
+                        else
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                    'Klik tombol untuk melihat nomor Virtual Account'),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    if (accountNumber != null) {
+                                      await simulateVAPayment(
+                                          external_id!, vaAmount!);
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title:
+                                                Text('Nomor Virtual Account'),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  "Bank BCA a.n PT POS CABANG",
+                                                  style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
-                                                actions: <Widget>[
-                                                  TextButton(
-                                                    child: Text('Close'),
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                  ),
-                                                ],
-                                              );
-                                            },
+                                                SizedBox(height: 20),
+                                                SelectableText(
+                                                  accountNumber!,
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                child: Text('Close'),
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ),
+                                            ],
                                           );
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                      ),
-                                      child: Text(
-                                        'Show QR Code',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
+                                        },
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                'Nomor VA belum tersedia')),
+                                      );
+                                    }
+                                  },
+                                  child: Text('Show Nomor VA'),
                                 ),
-                        ),
+                              ],
+                            ),
+                          ),
                       ] else ...[
                         SizedBox(height: 20),
                         Center(
@@ -674,99 +658,83 @@ class _PaymentDialogState extends State<PaymentDialog> {
     );
   }
 
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text("Generating Invoice..."),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _confirmPayment(String payment, bool delivery) async {
     try {
-      //check delivery
       if (delivery) {
-        if (_custAddressController.text.isNotEmpty &&
-            _custTelpNumberController.text.isNotEmpty) {
-          //transaksi
-          var response = await addTrans(payment, delivery, _noteController.text,
-              data_item, status, widget.total, context);
-          var transData = response?['data'];
-          final dataStorage = GetStorage();
-          String id_cabang = dataStorage.read('id_cabang');
-          //delivery
-          var responseDeliver = await addDelivery(
-              _custAddressController.text.toString(),
-              _custTelpNumberController.text.toString(),
-              transData.toString(),
-              context);
-          print(responseDeliver);
-          List<Map<String, dynamic>> cabang =
-              await getdatacabangByID(id_cabang);
-          String nama_cabang = cabang[0]['nama_cabang'];
-          String alamat = cabang[0]['alamat'];
-          String no_telp = cabang[0]['no_telp'];
-          // Initialize timezone data
-          tz.initializeTimeZones();
-          // Set the location to (WIB)
-          final jakarta = tz.getLocation('Asia/Jakarta');
-          DateTime invoicedate = tz.TZDateTime.now(jakarta);
-          String isdeliver;
-          if (delivery) {
-            isdeliver = "yes";
-          } else {
-            isdeliver = "no";
-          }
-          //invoice
-          var result = await generateInvoice(nama_cabang, alamat, no_telp,
-              invoicedate, payment, isdeliver, data_item, context);
-          print("ini hasil:${result['invoicePath']}");
-          _showInvoiceDialog(result['invoicePath'], context);
-          _noteController.text = "";
-          if (result['success']) {
-            setState(() {
-              _isInvoiceGenerated = true;
-            });
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Pay Confirmed!')),
-          );
-        } else {
+        if (_custAddressController.text.isEmpty ||
+            _custTelpNumberController.text.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Alamat tidak boleh kosong!')),
           );
+          return;
         }
-      } else {
-        //transaksi
-        var response = await addTrans(payment, delivery, _noteController.text,
-            data_item, status, widget.total, context);
-        var transData = response?['data'];
-        final dataStorage = GetStorage();
-        String id_cabang = dataStorage.read('id_cabang');
-        List<Map<String, dynamic>> cabang = await getdatacabangByID(id_cabang);
-        String nama_cabang = cabang[0]['nama_cabang'];
-        String alamat = cabang[0]['alamat'];
-        String no_telp = cabang[0]['no_telp'];
-        // Initialize timezone data
-        tz.initializeTimeZones();
-        // Set the location to (WIB)
-        final jakarta = tz.getLocation('Asia/Jakarta');
-        DateTime invoicedate = tz.TZDateTime.now(jakarta);
-        String isdeliver;
-        if (delivery) {
-          isdeliver = "yes";
-        } else {
-          isdeliver = "no";
-        }
-        //invoice
-        var result = await generateInvoice(nama_cabang, alamat, no_telp,
-            invoicedate, payment, isdeliver, data_item, context);
-        print("ini hasil:${result['invoicePath']}");
-        _showInvoiceDialog(result['invoicePath'], context);
-        _noteController.text = "";
-        if (result['success']) {
-          setState(() {
-            _isInvoiceGenerated = true;
-          });
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pay Confirmed!')),
+      }
+
+      var response = await addTrans(payment, delivery, _noteController.text,
+          data_item, status, widget.total, context);
+      var transData = response?['data'];
+
+      if (delivery) {
+        await addDelivery(
+          _custAddressController.text,
+          _custTelpNumberController.text,
+          transData.toString(),
+          context,
         );
       }
+
+      final dataStorage = GetStorage();
+      String id_cabang = dataStorage.read('id_cabang');
+      List<Map<String, dynamic>> cabang = await getdatacabangByID(id_cabang);
+      String nama_cabang = cabang[0]['nama_cabang'];
+      String alamat = cabang[0]['alamat'];
+      String no_telp = cabang[0]['no_telp'];
+
+      _showLoadingDialog(context);
+
+      tz.initializeTimeZones();
+      final jakarta = tz.getLocation('Asia/Jakarta');
+      DateTime invoicedate = tz.TZDateTime.now(jakarta);
+      String isdeliver = delivery ? "yes" : "no";
+
+      var result = await generateInvoice(nama_cabang, alamat, no_telp,
+          invoicedate, payment, isdeliver, data_item, context);
+
+      Navigator.of(context).pop();
+      print("ini hasil:${result['invoicePath']}");
+      _showInvoiceDialog(result['invoicePath'], context);
+
+      _noteController.text = "";
+      if (result['success']) {
+        setState(() {
+          _isInvoiceGenerated = true;
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pay Confirmed!')),
+      );
     } catch (e) {
-      throw Exception('Error fetching data: $e');
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: $e')),
+      );
     }
   }
 

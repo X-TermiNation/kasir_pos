@@ -248,147 +248,156 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                   ),
                   Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        child: DataTable(
-                          sortColumnIndex: filterBy == 'trans_date'
-                              ? 1
-                              : filterBy == 'payment_method'
-                                  ? 2
-                                  : filterBy == 'delivery'
-                                      ? 3
-                                      : filterBy == 'grand_total'
-                                          ? 4
-                                          : filterBy == 'status'
-                                              ? 5
-                                              : filterBy == 'item_amount'
-                                                  ? 6
-                                                  : 0,
-                          sortAscending: isAscending,
-                          columns: [
-                            DataColumn(
-                              label: Text('Transaction ID'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = '';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            DataColumn(
-                              label: Text('Transaction Date'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = 'trans_date';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
-                            ),
-                            DataColumn(
-                              label: Text('Payment Method'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = 'payment_method';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
-                            ),
-                            DataColumn(
-                              label: Text('Delivery'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = 'delivery';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
-                            ),
-                            DataColumn(
-                              label: Text('Grand Total'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = 'grand_total';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
-                            ),
-                            DataColumn(
-                              label: Text('Status'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = 'status';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
-                            ),
-                            DataColumn(
-                              label: Text('Item Count'),
-                              onSort: (index, ascending) {
-                                setState(() {
-                                  filterBy = 'item_amount';
-                                  isAscending = ascending;
-                                  sortTransactions();
-                                });
-                              },
-                            ),
-                            DataColumn(
-                              label: Text('Action'),
-                            ),
-                          ],
-                          rows: currentTransactions.map((transaction) {
-                            //change the time display in history here
-                            tz.initializeTimeZones();
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: DataTable(
+                                columnSpacing: 15, // spacing antar kolom
+                                dataRowMinHeight: 40,
+                                dataRowMaxHeight: 60,
+                                headingRowHeight: 50,
+                                sortColumnIndex: filterBy == 'trans_date'
+                                    ? 1
+                                    : filterBy == 'payment_method'
+                                        ? 2
+                                        : filterBy == 'delivery'
+                                            ? 3
+                                            : filterBy == 'grand_total'
+                                                ? 4
+                                                : filterBy == 'status'
+                                                    ? 5
+                                                    : filterBy == 'item_amount'
+                                                        ? 6
+                                                        : 0,
+                                sortAscending: isAscending,
+                                columns: [
+                                  DataColumn(
+                                      label: Text('ID'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = '';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(
+                                      label: Text('Date'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = 'trans_date';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(
+                                      label: Text('Payment'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = 'payment_method';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(
+                                      label: Text('Delivery'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = 'delivery';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(
+                                      label: Text('Total'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = 'grand_total';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(
+                                      label: Text('Status'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = 'status';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(
+                                      label: Text('Items'),
+                                      onSort: (i, asc) {
+                                        setState(() {
+                                          filterBy = 'item_amount';
+                                          isAscending = asc;
+                                          sortTransactions();
+                                        });
+                                      }),
+                                  DataColumn(label: Text('Action')),
+                                ],
+                                rows: currentTransactions.map((transaction) {
+                                  tz.initializeTimeZones();
 
-                            String formatTransactionDate(String utcDateString) {
-                              DateTime utcDate = DateTime.parse(utcDateString);
+                                  String formatTransactionDate(
+                                      String utcDateString) {
+                                    DateTime utcDate =
+                                        DateTime.parse(utcDateString);
+                                    final zone = tz.getLocation('Asia/Jakarta');
+                                    tz.TZDateTime timezoneDate =
+                                        tz.TZDateTime.from(utcDate, zone);
+                                    return DateFormat('dd/MM/yy HH:mm')
+                                        .format(timezoneDate);
+                                  }
 
-                              // change the location here
-                              final zone = tz.getLocation('Asia/Jakarta');
-
-                              tz.TZDateTime timezoneDate =
-                                  tz.TZDateTime.from(utcDate, zone);
-
-                              // Format the date using intl package
-                              return DateFormat('EEEE, dd-MM-yyyy HH:mm')
-                                  .format(timezoneDate);
-                            }
-
-                            return DataRow(cells: [
-                              DataCell(Text(transaction['_id'])),
-                              DataCell(
-                                Text(formatTransactionDate(
-                                    transaction['trans_date'])),
+                                  return DataRow(cells: [
+                                    DataCell(FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(transaction['_id']))),
+                                    DataCell(Text(formatTransactionDate(
+                                        transaction['trans_date']))),
+                                    DataCell(
+                                        Text(transaction['payment_method'])),
+                                    DataCell(Text(transaction['delivery']
+                                        ? 'Yes'
+                                        : 'No')),
+                                    DataCell(Text(
+                                        '\Rp.${NumberFormat('#,###', 'id_ID').format(transaction['grand_total'] ?? 0)}')),
+                                    DataCell(Text(transaction['status'])),
+                                    DataCell(
+                                        Text('${transaction['Items'].length}')),
+                                    DataCell(ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        minimumSize: Size(50, 30),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 10),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          selectedTransaction = transaction;
+                                        });
+                                      },
+                                      child: Text('Detail',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12)),
+                                    )),
+                                  ]);
+                                }).toList(),
                               ),
-                              DataCell(Text(transaction['payment_method'])),
-                              DataCell(
-                                  Text(transaction['delivery'] ? 'Yes' : 'No')),
-                              DataCell(Text(
-                                  '\Rp.${NumberFormat('#,###.00', 'id_ID').format(transaction['grand_total'] ?? 0.0)}')),
-                              DataCell(Text(transaction['status'])),
-                              DataCell(
-                                  Text('${transaction['Items'].length} Items')),
-                              DataCell(ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue[400]),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedTransaction = transaction;
-                                  });
-                                },
-                                child: Text('Detail',
-                                    style: TextStyle(color: Colors.white)),
-                              )),
-                            ]);
-                          }).toList(),
-                        ),
-                      ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   Padding(

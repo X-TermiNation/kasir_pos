@@ -146,7 +146,7 @@ class _CashierState extends State<Cashier> {
             theme: Provider.of<ThemeManager>(context).getTheme(),
             home: Scaffold(
               appBar: AppBar(
-                title: Text('Point of Sale App'),
+                title: Text('Cashier App'),
               ),
               drawer: Drawer(
                 child: Column(
@@ -555,45 +555,78 @@ class ItemCard extends StatelessWidget {
   final VoidCallback onPressed;
   final int satuanIndex;
 
-  ItemCard({
+  const ItemCard({
+    Key? key,
     required this.item,
     required this.onPressed,
     required this.satuanIndex,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 10, // Add a shadow to the card
-      color: Theme.of(context).brightness == Brightness.dark
-          ? Colors.grey[800]
-          : Theme.of(context).cardColor,
-      child: InkWell(
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(5.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Display the item image if available, otherwise show a placeholder
-              if (item.gambar_barang != null && item.gambar_barang!.isNotEmpty)
-                Image.memory(
-                  base64Decode(item.gambar_barang!),
-                  height: 120,
-                  width: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback if the image can't be loaded
-                    return _buildPlaceholderImage();
-                  },
-                )
-              else
-                _buildPlaceholderImage(),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-              // Item name
-              Text(
-                item.nama_barang,
-                style: Theme.of(context).textTheme.labelLarge,
+    return GestureDetector(
+      onTap: onPressed,
+      child: AspectRatio(
+        aspectRatio: 3 / 4, // Adjust as needed for a consistent card shape
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[850] : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black54 : Colors.grey.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 80% Image
+              Expanded(
+                flex: 8,
+                child: ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: item.gambar_barang != null &&
+                          item.gambar_barang!.isNotEmpty
+                      ? Image.memory(
+                          base64Decode(item.gambar_barang!),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildPlaceholderImage();
+                          },
+                        )
+                      : _buildPlaceholderImage(),
+                ),
+              ),
+
+              // 20% Item Name
+              Expanded(
+                flex: 2,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[100],
+                    borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(16)),
+                  ),
+                  child: Text(
+                    item.nama_barang,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ],
           ),
@@ -602,17 +635,14 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  // Placeholder widget to show when the image is null or fails to load
   Widget _buildPlaceholderImage() {
     return Container(
-      height: 120,
-      width: 120,
       color: Colors.grey[300],
-      child: Center(
+      child: const Center(
         child: Icon(
           Icons.image_not_supported,
           size: 50,
-          color: Colors.grey[600],
+          color: Colors.grey,
         ),
       ),
     );

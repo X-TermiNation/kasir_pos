@@ -9,32 +9,63 @@ import 'dart:async';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-Future<String?> createqris(int amount, BuildContext context) async {
+Future<Map<String, dynamic>?> createVA(int amount, BuildContext context) async {
   try {
-    final qrData = {
+    final vaData = {
       'amount': amount,
-      'callback_url':
-          "https://50b9-103-50-129-83.ngrok-free.app/xendit/callback",
     };
-    final url = 'http://10.0.2.2:3000/xendit/create-qris';
+
+    final url = 'http://10.0.2.2:3000/xendit/create-va';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(qrData),
+      body: jsonEncode(vaData),
     );
+
     final responseData = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      return responseData['qr_image']; // <- Correct field name from backend
+      // Pastikan backend mengirimkan 'account_number' pada response
+      return {
+        'account_number': responseData['account_number'], // Nomor VA
+        'bank_code': responseData['bank_code'],
+        'name': responseData['name'],
+        'amount': responseData['amount'],
+        'external_id': responseData['external_id'], // penting untuk simulasinya
+      };
     } else {
-      showToast(context, "Gagal menampilkan QR");
+      showToast(context, "Gagal membuat Virtual Account");
       print('HTTP Error: ${response.statusCode}');
       return null;
     }
   } catch (error) {
-    showToast(context, "Error: $error");
+    showToast(context, "Terjadi error: $error");
     print('Exception during HTTP request: $error');
     return null;
+  }
+}
+
+Future<void> simulateVAPayment(String externalId, int vaAmount) async {
+  try {
+    print("$externalId - $vaAmount");
+    final url = 'http://10.0.2.2:3000/xendit/simulate-va-payment';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'external_id': externalId,
+        'amount': vaAmount,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Simulasi pembayaran berhasil');
+      // Bisa kasih feedback ke UI, misal snackbar lewat callback
+    } else {
+      print('Gagal simulasi pembayaran');
+    }
+  } catch (e) {
+    print('Error simulasi pembayaran: $e');
   }
 }
 
@@ -88,8 +119,7 @@ Future<Map<String, dynamic>?> addTrans(
     // Prepare transaction data
     final transData = {
       'id_cabang': id_cabang,
-      'trans_date': DateFormat('yyyy-MM-ddTHH:mm:ss')
-          .format(trans_date), // Ensure date is properly formatted
+      'trans_date': DateFormat('yyyy-MM-ddTHH:mm:ss').format(trans_date),
       'payment_method': payment_method,
       'delivery': delivery,
       'desc': desc,
