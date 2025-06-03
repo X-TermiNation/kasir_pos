@@ -7,6 +7,8 @@ import 'package:kasir_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:qr/qr.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
@@ -167,6 +169,27 @@ class _PaymentDialogState extends State<PaymentDialog> {
     }
   }
 
+  //qrcode
+  Future<void> _fetchQRCodeUrl() async {
+    try {
+      final url = await createqris(widget.total.toInt(), context);
+      setState(() {
+        qrBase64 = url;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Uint8List base64ToImage(String base64String) {
+    final uriHeaderRegex = RegExp(r'data:image\/\w+;base64,');
+    final cleanedBase64 = base64String.replaceAll(uriHeaderRegex, '');
+    return base64Decode(cleanedBase64);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -205,16 +228,13 @@ class _PaymentDialogState extends State<PaymentDialog> {
                               Container(
                                 width: 120.0,
                                 height: 120.0,
-                                color: Colors
-                                    .grey[300], // Placeholder background color
+                                color: Colors.grey[300],
                                 child: item.item.gambar_barang != null
                                     ? Image.memory(
-                                        base64Decode(item.item
-                                            .gambar_barang!), // Decode Base64 string
+                                        base64Decode(item.item.gambar_barang!),
                                         fit: BoxFit.cover,
                                         errorBuilder:
                                             (context, error, stackTrace) {
-                                          // Fallback if the image can't be loaded
                                           return _buildPlaceholderImage();
                                         },
                                       )
@@ -406,6 +426,62 @@ class _PaymentDialogState extends State<PaymentDialog> {
                       Text('Select Payment Method:'),
                       Row(
                         children: [
+                          // Expanded(
+                          //   child: ElevatedButton(
+                          //     onPressed: () {
+                          //       setState(() {
+                          //         _isLoading = true;
+                          //         _fetchQRCodeUrl();
+                          //         _selectedPaymentMethod = 'VA';
+                          //       });
+                          //     },
+                          //     style: ElevatedButton.styleFrom(
+                          //       minimumSize: Size(120, 120),
+                          //       shape: RoundedRectangleBorder(
+                          //         borderRadius: BorderRadius.circular(15),
+                          //       ),
+                          //       padding: EdgeInsets.all(0),
+                          //       backgroundColor:
+                          //           _selectedPaymentMethod == 'QRIS'
+                          //               ? Theme.of(context).primaryColor
+                          //               : Theme.of(context).brightness ==
+                          //                       Brightness.dark
+                          //                   ? Colors.grey[800]
+                          //                   : Colors.grey[300],
+                          //       elevation: 15,
+                          //       shadowColor: Colors.black.withOpacity(0.3),
+                          //     ),
+                          //     child: Column(
+                          //       mainAxisAlignment: MainAxisAlignment.center,
+                          //       children: [
+                          //         Icon(
+                          //           Icons.qr_code_2,
+                          //           size: 55,
+                          //           color: _selectedPaymentMethod == 'QRIS'
+                          //               ? Colors.white
+                          //               : Theme.of(context).brightness ==
+                          //                       Brightness.dark
+                          //                   ? Colors.white
+                          //                   : Colors.black,
+                          //         ),
+                          //         SizedBox(height: 8),
+                          //         Text(
+                          //           'QRIS',
+                          //           style: TextStyle(
+                          //             color: _selectedPaymentMethod == 'QRIS'
+                          //                 ? Colors.white
+                          //                 : Theme.of(context).brightness ==
+                          //                         Brightness.dark
+                          //                     ? Colors.white
+                          //                     : Colors.black,
+                          //             fontWeight: FontWeight.bold,
+                          //             fontSize: 16,
+                          //           ),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ),
+                          // ),
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () {
@@ -463,7 +539,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                 setState(() {
                                   _selectedPaymentMethod = 'Cash';
                                   _isLoading = false;
-                                  // Reset VA data kalau pindah metode
                                   accountNumber = null;
                                   bankCode = null;
                                   vaName = null;
@@ -522,10 +597,27 @@ class _PaymentDialogState extends State<PaymentDialog> {
                         else
                           Center(
                             child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
+                                Icon(
+                                  Icons.account_balance_wallet_outlined,
+                                  size: 60,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(height: 16),
                                 Text(
-                                    'Klik tombol untuk melihat nomor Virtual Account'),
-                                ElevatedButton(
+                                  'Klik tombol untuk melihat nomor Virtual Account',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
                                   onPressed: () async {
                                     if (accountNumber != null) {
                                       await simulateVAPayment(
@@ -534,34 +626,69 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                         context: context,
                                         builder: (BuildContext context) {
                                           return AlertDialog(
-                                            title:
-                                                Text('Nomor Virtual Account'),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 20,
+                                            ),
+                                            title: const Center(
+                                              child: Text(
+                                                'Nomor Virtual Account',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
                                             content: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Text(
                                                   "Bank BCA a.n PT POS CABANG",
-                                                  style: TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                                  textAlign: TextAlign.center,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleMedium
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
                                                 ),
-                                                SizedBox(height: 20),
+                                                const SizedBox(height: 16),
                                                 SelectableText(
                                                   accountNumber!,
-                                                  style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                                  textAlign: TextAlign.center,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headlineSmall
+                                                      ?.copyWith(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                 ),
                                               ],
                                             ),
                                             actions: <Widget>[
-                                              TextButton(
-                                                child: Text('Close'),
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
+                                              Center(
+                                                child: TextButton.icon(
+                                                  icon: const Icon(Icons.close),
+                                                  label: const Text('Tutup'),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    foregroundColor:
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           );
@@ -570,17 +697,73 @@ class _PaymentDialogState extends State<PaymentDialog> {
                                     } else {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
-                                        SnackBar(
+                                        const SnackBar(
                                             content: Text(
                                                 'Nomor VA belum tersedia')),
                                       );
                                     }
                                   },
-                                  child: Text('Show Nomor VA'),
+                                  icon: const Icon(Icons.visibility),
+                                  label: const Text('Tampilkan Nomor VA'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600),
+                                  ),
                                 ),
+                                // ElevatedButton(
+                                //   onPressed: () async {
+                                //     if (qrBase64 != null &&
+                                //         qrBase64!.isNotEmpty) {
+                                //       showDialog(
+                                //         context: context,
+                                //         builder: (BuildContext context) {
+                                //           return AlertDialog(
+                                //             title: Text('QR Code'),
+                                //             content: Column(
+                                //               mainAxisSize: MainAxisSize.min,
+                                //               children: [
+                                //                 Text(
+                                //                   "a/n xxx xxx xxx",
+                                //                   style: TextStyle(
+                                //                       fontSize: 18,
+                                //                       fontWeight:
+                                //                           FontWeight.bold),
+                                //                 ),
+                                //                 SizedBox(height: 20),
+                                //                 Image.memory(
+                                //                     base64ToImage(qrBase64!)),
+                                //               ],
+                                //             ),
+                                //             actions: <Widget>[
+                                //               TextButton(
+                                //                 child: Text('Close'),
+                                //                 onPressed: () {
+                                //                   Navigator.of(context).pop();
+                                //                 },
+                                //               ),
+                                //             ],
+                                //           );
+                                //         },
+                                //       );
+                                //     }
+                                //   },
+                                //   style: ElevatedButton.styleFrom(
+                                //     backgroundColor: Colors.blue,
+                                //   ),
+                                //   child: Text(
+                                //     'Show QR Code',
+                                //     style: TextStyle(color: Colors.white),
+                                //   ),
+                                // ),
                               ],
                             ),
-                          ),
+                          )
                       ] else ...[
                         SizedBox(height: 20),
                         Center(
@@ -614,20 +797,28 @@ class _PaymentDialogState extends State<PaymentDialog> {
                           ]
                         ],
                       ),
-                      CheckboxListTile(
-                        title: Text('Delivery'),
-                        value: _isDelivery,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _isDelivery = value ?? false;
-                            if (_isDelivery) {
-                              status = "Pending";
-                            } else {
-                              status = "Confirmed";
-                            }
-                            print("status DELIVERY: $status");
-                          });
-                        },
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Delivery:',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 20),
+                            child: Switch(
+                              value: _isDelivery,
+                              onChanged: (bool value) {
+                                setState(() {
+                                  _isDelivery = value;
+                                  status =
+                                      _isDelivery ? "Pending" : "Confirmed";
+                                  print("status DELIVERY: $status");
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                       TextField(
                         controller: _noteController,

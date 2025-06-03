@@ -26,7 +26,7 @@ class Cashier extends StatefulWidget {
 }
 
 class _CashierState extends State<Cashier> {
-  static const int itemsPerPage = 9;
+  static const int itemsPerPage = 6;
   int currentPage = 0;
   List<Barang> _items = [];
   List<Barang> _displayedItems = [];
@@ -569,7 +569,7 @@ class ItemCard extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: AspectRatio(
-        aspectRatio: 3 / 4, // Adjust as needed for a consistent card shape
+        aspectRatio: 3 / 4,
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -604,8 +604,6 @@ class ItemCard extends StatelessWidget {
                       : _buildPlaceholderImage(),
                 ),
               ),
-
-              // 20% Item Name
               Expanded(
                 flex: 2,
                 child: Container(

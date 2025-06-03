@@ -21,15 +21,15 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text("Kasir"),
+          title: const Text("Cashier POS"),
         ),
         body: Center(
           child: SingleChildScrollView(
             child: Container(
-              width: 400, // Set a fixed width for the square container
-              height:
-                  400, // Set the same height to maintain a square aspect ratio
+              width: 400,
+              height: 400,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
@@ -95,7 +95,7 @@ class _LoginState extends State<Login> {
                     const SizedBox(height: 30),
                     Center(
                       child: SizedBox(
-                        width: 200, // Adjust the width as needed
+                        width: 200,
                         child: ElevatedButton(
                           onPressed: () async {
                             int signcode =

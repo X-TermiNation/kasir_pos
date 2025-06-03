@@ -9,6 +9,35 @@ import 'dart:async';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+Future<String?> createqris(int amount, BuildContext context) async {
+  try {
+    final qrData = {
+      'amount': amount,
+      'callback_url':
+          "https://50b9-103-50-129-83.ngrok-free.app/xendit/callback", //ubah sesuai kebutuhan
+    };
+    final url = 'http://10.0.2.2:3000/xendit/create-qris';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(qrData),
+    );
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return responseData['qr_image'];
+    } else {
+      showToast(context, "Gagal menampilkan QR");
+      print('HTTP Error: ${response.statusCode}');
+      return null;
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+    return null;
+  }
+}
+
 Future<Map<String, dynamic>?> createVA(int amount, BuildContext context) async {
   try {
     final vaData = {

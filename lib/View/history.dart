@@ -160,425 +160,420 @@ class _HistoryPageState extends State<HistoryPage> {
       return MaterialApp(
         theme: Provider.of<ThemeManager>(context).getTheme(),
         home: Scaffold(
-            appBar: AppBar(
-              title: Text('Transaction History'),
-            ),
-            drawer: Drawer(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 100,
-                    child: DrawerHeader(
-                      padding: EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                      ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Cashier App',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                          ),
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            title: Text('Transaction History'),
+          ),
+          drawer: Drawer(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 100,
+                  child: DrawerHeader(
+                    padding: EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Cashier App',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 20,
                         ),
                       ),
                     ),
                   ),
-                  ListTile(
-                    leading: Icon(Icons.point_of_sale),
-                    title: Text('Cashier'),
-                    onTap: () {
-                      setState(() {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Cashier(),
-                          ),
-                        );
-                      });
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.history),
-                    title: Text('Transaction History'),
-                    onTap: () {},
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.settings_display_rounded),
-                    title: Consumer<ThemeManager>(
-                      builder: (context, themeProvider, child) {
-                        return Text(themeProvider.isDarkMode
-                            ? 'Change Light Mode'
-                            : 'Change Dark Mode');
-                      },
-                    ),
-                    onTap: () {
-                      Provider.of<ThemeManager>(context, listen: false)
-                          .toggleDarkMode();
-                    },
-                  ),
-                  Spacer(),
-                  ListTile(
-                    leading: Icon(Icons.logout),
-                    title: Text('Log Out'),
-                    onTap: () {
-                      showLogoutConfirmationDialog(context);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            body: Expanded(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                ),
+                ListTile(
+                  leading: Icon(Icons.point_of_sale),
+                  title: Text('Cashier'),
+                  onTap: () {
+                    setState(() {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Cashier(),
                         ),
-                      ),
-                      onChanged: (value) {
-                        _filterTransactions(value);
-                      },
-                    ),
+                      );
+                    });
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.history),
+                  title: Text('Transaction History'),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: Icon(Icons.settings_display_rounded),
+                  title: Consumer<ThemeManager>(
+                    builder: (context, themeProvider, child) {
+                      return Text(themeProvider.isDarkMode
+                          ? 'Change Light Mode'
+                          : 'Change Dark Mode');
+                    },
                   ),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: DataTable(
-                                columnSpacing: 15, // spacing antar kolom
-                                dataRowMinHeight: 40,
-                                dataRowMaxHeight: 60,
-                                headingRowHeight: 50,
-                                sortColumnIndex: filterBy == 'trans_date'
-                                    ? 1
-                                    : filterBy == 'payment_method'
-                                        ? 2
-                                        : filterBy == 'delivery'
-                                            ? 3
-                                            : filterBy == 'grand_total'
-                                                ? 4
-                                                : filterBy == 'status'
-                                                    ? 5
-                                                    : filterBy == 'item_amount'
-                                                        ? 6
-                                                        : 0,
-                                sortAscending: isAscending,
-                                columns: [
-                                  DataColumn(
-                                      label: Text('ID'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = '';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(
-                                      label: Text('Date'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = 'trans_date';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(
-                                      label: Text('Payment'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = 'payment_method';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(
-                                      label: Text('Delivery'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = 'delivery';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(
-                                      label: Text('Total'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = 'grand_total';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(
-                                      label: Text('Status'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = 'status';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(
-                                      label: Text('Items'),
-                                      onSort: (i, asc) {
-                                        setState(() {
-                                          filterBy = 'item_amount';
-                                          isAscending = asc;
-                                          sortTransactions();
-                                        });
-                                      }),
-                                  DataColumn(label: Text('Action')),
-                                ],
-                                rows: currentTransactions.map((transaction) {
-                                  tz.initializeTimeZones();
+                  onTap: () {
+                    Provider.of<ThemeManager>(context, listen: false)
+                        .toggleDarkMode();
+                  },
+                ),
+                Spacer(),
+                ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Log Out'),
+                  onTap: () {
+                    showLogoutConfirmationDialog(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+          body: Stack(
+            children: [
+              // Layer utama: semua layout di atas
+              Positioned.fill(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search...',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          _filterTransactions(value);
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: DataTable(
+                                  columnSpacing: 15,
+                                  dataRowMinHeight: 40,
+                                  dataRowMaxHeight: 60,
+                                  headingRowHeight: 50,
+                                  sortColumnIndex: filterBy == 'trans_date'
+                                      ? 1
+                                      : filterBy == 'payment_method'
+                                          ? 2
+                                          : filterBy == 'delivery'
+                                              ? 3
+                                              : filterBy == 'grand_total'
+                                                  ? 4
+                                                  : filterBy == 'status'
+                                                      ? 5
+                                                      : filterBy ==
+                                                              'item_amount'
+                                                          ? 6
+                                                          : 0,
+                                  sortAscending: isAscending,
+                                  columns: [
+                                    DataColumn(
+                                        label: Text('ID'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = '';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(
+                                        label: Text('Date'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = 'trans_date';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(
+                                        label: Text('Payment'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = 'payment_method';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(
+                                        label: Text('Delivery'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = 'delivery';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(
+                                        label: Text('Total'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = 'grand_total';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(
+                                        label: Text('Status'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = 'status';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(
+                                        label: Text('Items'),
+                                        onSort: (i, asc) {
+                                          setState(() {
+                                            filterBy = 'item_amount';
+                                            isAscending = asc;
+                                            sortTransactions();
+                                          });
+                                        }),
+                                    DataColumn(label: Text('Action')),
+                                  ],
+                                  rows: currentTransactions.map((transaction) {
+                                    tz.initializeTimeZones();
 
-                                  String formatTransactionDate(
-                                      String utcDateString) {
-                                    DateTime utcDate =
-                                        DateTime.parse(utcDateString);
-                                    final zone = tz.getLocation('Asia/Jakarta');
-                                    tz.TZDateTime timezoneDate =
-                                        tz.TZDateTime.from(utcDate, zone);
-                                    return DateFormat('dd/MM/yy HH:mm')
-                                        .format(timezoneDate);
-                                  }
+                                    String formatTransactionDate(
+                                        String utcDateString) {
+                                      DateTime utcDate =
+                                          DateTime.parse(utcDateString);
+                                      final zone =
+                                          tz.getLocation('Asia/Jakarta');
+                                      tz.TZDateTime timezoneDate =
+                                          tz.TZDateTime.from(utcDate, zone);
+                                      return DateFormat('dd/MM/yy HH:mm')
+                                          .format(timezoneDate);
+                                    }
 
-                                  return DataRow(cells: [
-                                    DataCell(FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(transaction['_id']))),
-                                    DataCell(Text(formatTransactionDate(
-                                        transaction['trans_date']))),
-                                    DataCell(
-                                        Text(transaction['payment_method'])),
-                                    DataCell(Text(transaction['delivery']
-                                        ? 'Yes'
-                                        : 'No')),
-                                    DataCell(Text(
-                                        '\Rp.${NumberFormat('#,###', 'id_ID').format(transaction['grand_total'] ?? 0)}')),
-                                    DataCell(Text(transaction['status'])),
-                                    DataCell(
-                                        Text('${transaction['Items'].length}')),
-                                    DataCell(ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        minimumSize: Size(50, 30),
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 10),
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          selectedTransaction = transaction;
-                                        });
-                                      },
-                                      child: Text('Detail',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12)),
-                                    )),
-                                  ]);
-                                }).toList(),
+                                    return DataRow(cells: [
+                                      DataCell(FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(transaction['_id']))),
+                                      DataCell(Text(formatTransactionDate(
+                                          transaction['trans_date']))),
+                                      DataCell(
+                                          Text(transaction['payment_method'])),
+                                      DataCell(Text(transaction['delivery']
+                                          ? 'Yes'
+                                          : 'No')),
+                                      DataCell(Text(
+                                          '\Rp.${NumberFormat('#,###', 'id_ID').format(transaction['grand_total'] ?? 0)}')),
+                                      DataCell(Text(transaction['status'])),
+                                      DataCell(Text(
+                                          '${transaction['Items'].length}')),
+                                      DataCell(ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          minimumSize: Size(50, 30),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            selectedTransaction = transaction;
+                                          });
+                                        },
+                                        child: Text('Detail',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12)),
+                                      )),
+                                    ]);
+                                  }).toList(),
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: currentPage > 1
-                              ? () {
-                                  setState(() {
-                                    currentPage--;
-                                  });
-                                }
-                              : null,
-                          child: Text('Previous'),
-                        ),
-                        Text('Page $currentPage of $totalPages'),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: currentPage < totalPages
-                              ? () {
-                                  setState(() {
-                                    currentPage++;
-                                  });
-                                }
-                              : null,
-                          child: Text('Next'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (selectedTransaction != null)
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surface, // Background color from theme
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
                             ),
-                            padding: EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Transaction Details',
+                            onPressed: currentPage > 1
+                                ? () {
+                                    setState(() {
+                                      currentPage--;
+                                    });
+                                  }
+                                : null,
+                            child: Text('Previous'),
+                          ),
+                          Text('Page $currentPage of $totalPages'),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: currentPage < totalPages
+                                ? () {
+                                    setState(() {
+                                      currentPage++;
+                                    });
+                                  }
+                                : null,
+                            child: Text('Next'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Layer detail transaksi di bawah
+              if (selectedTransaction != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    height: MediaQuery.of(context).size.height *
+                        0.45, // tinggi detail
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Transaction Details',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                SizedBox(height: 10),
-                                Text(
+                                      ?.copyWith(fontWeight: FontWeight.bold)),
+                              SizedBox(height: 10),
+                              Text(
                                   'Transaction ID: ${selectedTransaction!['_id']}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                Text(
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              Text(
                                   'Date: ${DateFormat('dd-MM-yyyy').format(DateTime.parse(selectedTransaction!['trans_date']))}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                Text(
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              Text(
                                   'Grand Total: \Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedTransaction!['grand_total'] ?? 0.0)}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                Text(
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              Text(
                                   'Payment Method: ${selectedTransaction!['payment_method']}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                Text(
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              Text(
                                   'Delivery: ${selectedTransaction!['delivery'] ? "Yes" : "No"}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                Text(
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              Text(
                                   'Description: ${selectedTransaction!['desc'] ?? "N/A"}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                Text(
-                                  'Status: ${selectedTransaction!['status']}',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                SizedBox(height: 20),
-                                Text(
-                                  'Items:',
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              Text('Status: ${selectedTransaction!['status']}',
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              SizedBox(height: 20),
+                              Text('Items:',
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                                ...selectedTransaction!['Items']
-                                    .map<Widget>((item) {
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Name: ${item['nama_barang']}',
+                                      ?.copyWith(fontWeight: FontWeight.bold)),
+                              ...selectedTransaction!['Items']
+                                  .map<Widget>((item) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Name: ${item['nama_barang']}',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .labelLarge,
-                                      ),
-                                      Text(
-                                        'Satuan: ${item['id_satuan']}',
+                                            .labelLarge),
+                                    Text('Satuan: ${item['id_satuan']}',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .labelLarge,
-                                      ),
-                                      Text(
+                                            .labelLarge),
+                                    Text(
                                         'Satuan Price: ${item['satuan_price']}',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .labelLarge,
-                                      ),
-                                      Text(
-                                        'Quantity: ${item['trans_qty']}',
+                                            .labelLarge),
+                                    Text('Quantity: ${item['trans_qty']}',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .labelLarge,
-                                      ),
-                                      Text(
+                                            .labelLarge),
+                                    Text(
                                         'Discount: ${item['persentase_diskon'] ?? 0}%',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .labelLarge,
-                                      ),
-                                      Text(
-                                        'Total Price: ${item['total_price']}',
+                                            .labelLarge),
+                                    Text('Total Price: ${item['total_price']}',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .labelLarge,
-                                      ),
-                                      Divider(
-                                        color: Theme.of(context).dividerColor,
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
-                                SizedBox(height: 10),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedTransaction = null;
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                  child: Text(
-                                    'Clear',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
+                                            .labelLarge),
+                                    Divider(
+                                        color: Theme.of(context).dividerColor),
+                                  ],
+                                );
+                              }).toList(),
+                              SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedTransaction = null;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
                                 ),
-                              ],
-                            ),
+                                child: Text('Clear',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
-            )),
+                  ),
+                ),
+            ],
+          ),
+        ),
       );
     }
   }
