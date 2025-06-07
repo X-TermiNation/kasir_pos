@@ -5,12 +5,13 @@ import 'dart:async';
 import 'package:get_storage/get_storage.dart';
 import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:kasir_pos/view-model-flutter/gudang_controller.dart';
+import '../api_config.dart';
 
 String idcabangglobal = "";
 
 //verify
 Future<void> verify() async {
-  String uriString = "http://10.0.2.2:3000/user/verify";
+  String uriString = "${ApiConfig().baseUrl}/user/verify";
   Uri uri = Uri.parse(uriString);
   final response = await http.get(uri);
 }
@@ -19,7 +20,7 @@ Future<void> verify() async {
 Future<List<Map<String, dynamic>>> getUsers() async {
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
-  final request = Uri.parse('http://10.0.2.2:3000/user/list/$id_cabangs');
+  final request = Uri.parse('${ApiConfig().baseUrl}/user/list/$id_cabangs');
   final response = await http.get(request);
   if (response.body.isEmpty) {
     return [];
@@ -42,7 +43,7 @@ Future<void> fetchData() async {
 //login
 Future<int> loginbtn(String email, String pass) async {
   try {
-    String uriString = "http://10.0.2.2:3000/user/loginkasir";
+    String uriString = "${ApiConfig().baseUrl}/user/loginkasir";
     Uri uri = Uri.parse(uriString);
     final response = await http.post(
       uri,
@@ -84,7 +85,7 @@ void tambahOwner(String email, String pass, String fname, String lname) async {
     };
 
     if (email != "" && pass != "" && fname != "" && lname != "") {
-      final url = 'http://10.0.2.2:3000/user/addOwner';
+      final url = '${ApiConfig().baseUrl}/user/addOwner';
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -120,7 +121,7 @@ void tambahpegawai(
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
     if (email != "" && pass != "" && fname != "" && lname != "") {
-      final url = 'http://10.0.2.2:3000/user/addUser/$id_cabang';
+      final url = '${ApiConfig().baseUrl}/user/addUser/$id_cabang';
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -145,7 +146,7 @@ void tambahpegawai(
 void deleteuser(String id, BuildContext context) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
-  final url = 'http://10.0.2.2:3000/user/deleteuser/$id/$id_cabang';
+  final url = '${ApiConfig().baseUrl}/user/deleteuser/$id/$id_cabang';
   final response = await http.delete(Uri.parse(url));
   if (response.statusCode == 200) {
     // Data deleted successfully
@@ -168,7 +169,7 @@ void UpdateUser(String fname, String lname, String role, String id,
   };
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
-  final url = 'http://10.0.2.2:3000/user/updateuser/$id/$id_cabang';
+  final url = '${ApiConfig().baseUrl}/user/updateuser/$id/$id_cabang';
   try {
     final response = await http.put(
       Uri.parse(url),

@@ -3,9 +3,11 @@ import 'package:get_storage/get_storage.dart';
 import 'package:kasir_pos/View/Login.dart';
 import 'package:kasir_pos/View/tools/theme_mode.dart';
 import 'package:provider/provider.dart';
+import '../api_config.dart';
 
 void main() async {
   await GetStorage.init();
+  await ApiConfig().init();
   runApp(
     ChangeNotifierProvider<ThemeManager>(
       create: (_) => ThemeManager(),

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:kasir_pos/View/tools/custom_toast.dart';
 import 'package:get_storage/get_storage.dart';
+import '../api_config.dart';
 
 //getdiskon
 //bermasalah
@@ -10,7 +11,7 @@ Future<List<Map<String, dynamic>>> getDiskon() async {
   final dataStorage = GetStorage();
   final id_cabangs = dataStorage.read('id_cabang');
   final request =
-      Uri.parse('http://10.0.2.2:3000/barang/diskonlist/$id_cabangs');
+      Uri.parse('${ApiConfig().baseUrl}/barang/diskonlist/$id_cabangs');
   final response = await http.get(request);
   final Map<String, dynamic> jsonData = json.decode(response.body);
   if (!jsonData.containsKey("data")) {
@@ -41,7 +42,7 @@ Future<List<Map<String, dynamic>>> getbarangdiskonlist(String id_gudang) async {
     final dataStorage = GetStorage();
     String id_cabangs = dataStorage.read('id_cabang');
     final request = Uri.parse(
-        'http://10.0.2.2:3000/barang/baranglist/$id_gudang/$id_cabangs');
+        '${ApiConfig().baseUrl}/barang/baranglist/$id_gudang/$id_cabangs');
     final response = await http.get(request);
     if (response.statusCode == 200 || response.statusCode == 304) {
       final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -62,7 +63,7 @@ Future<List<Map<String, dynamic>>> getDiskonbyBarang(id_reference) async {
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
   final request = Uri.parse(
-      'http://10.0.2.2:3000/barang/diskonlistBarangFilter/$id_reference/$id_cabangs');
+      '${ApiConfig().baseUrl}/barang/diskonlistBarangFilter/$id_reference/$id_cabangs');
   final response = await http.get(request);
   final Map<String, dynamic> jsonData = json.decode(response.body);
   if (!jsonData.containsKey("data")) {
@@ -98,7 +99,7 @@ Future<void> tambahdiskon(
     };
 
     if (nama_diskon != "" && persentase_diskon != "") {
-      final url = 'http://10.0.2.2:3000/barang/tambahdiskon/$id_cabangs';
+      final url = '${ApiConfig().baseUrl}/barang/tambahdiskon/$id_cabangs';
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -113,7 +114,7 @@ Future<void> tambahdiskon(
         String nmdiskon = nama_diskon.toString();
         //mencari diskon sesuai nama yang baru di add
         final request3 = Uri.parse(
-            'http://10.0.2.2:3000/barang/diskonlist/$id_cabangs/$nmdiskon');
+            '${ApiConfig().baseUrl}/barang/diskonlist/$id_cabangs/$nmdiskon');
         final response3 = await http.get(request3);
         if (response3.statusCode == 200 ||
             response.statusCode == 204 ||
@@ -132,7 +133,7 @@ Future<void> tambahdiskon(
                 'kategori_barang': databarang[i]['kategori_barang'],
               };
               final url2 =
-                  'http://10.0.2.2:3000/barang/tambahdiskonbarang/${datadiskon[0]['_id']}/${databarang[i]['_id']}/$id_cabangs/$id_gudang';
+                  '${ApiConfig().baseUrl}/barang/tambahdiskonbarang/${datadiskon[0]['_id']}/${databarang[i]['_id']}/$id_cabangs/$id_gudang';
               final response2 = await http.post(
                 Uri.parse(url2),
                 headers: {
@@ -165,7 +166,7 @@ Future<void> tambahdiskon(
 void deletediskon(String id) async {
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
-  final url = 'http://10.0.2.2:3000/barang/deletediskon/$id/$id_cabangs';
+  final url = '${ApiConfig().baseUrl}/barang/deletediskon/$id/$id_cabangs';
   final response = await http.delete(Uri.parse(url));
 
   if (response.statusCode == 200) {

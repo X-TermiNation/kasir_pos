@@ -8,15 +8,16 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import '../api_config.dart';
 
 Future<String?> createqris(int amount, BuildContext context) async {
   try {
     final qrData = {
       'amount': amount,
       'callback_url':
-          "https://50b9-103-50-129-83.ngrok-free.app/xendit/callback", //ubah sesuai kebutuhan
+          "https://serverpos-production.up.railway.app/xendit/callback", //ubah sesuai kebutuhan
     };
-    final url = 'http://10.0.2.2:3000/xendit/create-qris';
+    final url = '${ApiConfig().baseUrl}/xendit/create-qris';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -44,7 +45,7 @@ Future<Map<String, dynamic>?> createVA(int amount, BuildContext context) async {
       'amount': amount,
     };
 
-    final url = 'http://10.0.2.2:3000/xendit/create-va';
+    final url = '${ApiConfig().baseUrl}/xendit/create-va';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -77,7 +78,7 @@ Future<Map<String, dynamic>?> createVA(int amount, BuildContext context) async {
 Future<void> simulateVAPayment(String externalId, int vaAmount) async {
   try {
     print("$externalId - $vaAmount");
-    final url = 'http://10.0.2.2:3000/xendit/simulate-va-payment';
+    final url = '${ApiConfig().baseUrl}/xendit/simulate-va-payment';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -107,7 +108,7 @@ void createInvoice(String external_id, int amount, String payer_email,
       'payer_email': payer_email,
       'description': description,
     };
-    final url = 'http://10.0.2.2:3000/xendit/create-qris';
+    final url = '${ApiConfig().baseUrl}/xendit/create-qris';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -158,7 +159,7 @@ Future<Map<String, dynamic>?> addTrans(
     };
 
     // Send the transaction data to the server
-    final url = 'http://10.0.2.2:3000/transaksi/addtrans/$id_cabang';
+    final url = '${ApiConfig().baseUrl}/transaksi/addtrans/$id_cabang';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -202,7 +203,7 @@ Future<List<Map<String, dynamic>>> getTrans() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final request =
-      Uri.parse('http://10.0.2.2:3000/transaksi/translist/$id_cabang');
+      Uri.parse('${ApiConfig().baseUrl}/transaksi/translist/$id_cabang');
   final response = await http.get(request);
   if (response.statusCode == 200 || response.statusCode == 304) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -230,7 +231,7 @@ Future<Map<String, dynamic>?> addDelivery(
       'no_telp_cust': no_telp_cust,
       'transaksi_id': transaksi_id,
     };
-    final url = 'http://10.0.2.2:3000/transaksi/addDelivery/$id_cabang';
+    final url = '${ApiConfig().baseUrl}/transaksi/addDelivery/$id_cabang';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -265,7 +266,7 @@ Future<Map<String, dynamic>> generateInvoice(
     final DateFormat formatter = DateFormat('yyyy-MM-ddTHH:mm:ss');
     String dateinvoice = formatter.format(date_trans);
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3000/invoice/generate-invoice'),
+      Uri.parse('${ApiConfig().baseUrl}/invoice/generate-invoice'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -303,7 +304,7 @@ Future<Map<String, dynamic>> generateInvoice(
 
 Future<bool> sendInvoiceByEmail(
     String invoicePath, String receiverEmail, BuildContext context) async {
-  final Uri uri = Uri.parse('http://10.0.2.2:3000/invoice/invoice-email');
+  final Uri uri = Uri.parse('${ApiConfig().baseUrl}/invoice/invoice-email');
   try {
     final response = await http.post(
       uri,

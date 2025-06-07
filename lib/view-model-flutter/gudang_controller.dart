@@ -2,12 +2,13 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:get_storage/get_storage.dart';
+import '../api_config.dart';
 
 Future<void> getdatagudang() async {
   try {
     final dataStorage = GetStorage();
     String idcabang = dataStorage.read('id_cabang');
-    final url = 'http://10.0.2.2:3000/gudang/$idcabang';
+    final url = '${ApiConfig().baseUrl}/gudang/$idcabang';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 304 || response.statusCode == 200) {
       final jsonData = json.decode(response.body);
