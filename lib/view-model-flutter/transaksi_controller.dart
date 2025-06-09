@@ -12,6 +12,7 @@ import '../api_config.dart';
 
 Future<String?> createqris(int amount, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final qrData = {
       'amount': amount,
       'callback_url':
@@ -41,6 +42,7 @@ Future<String?> createqris(int amount, BuildContext context) async {
 
 Future<Map<String, dynamic>?> createVA(int amount, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final vaData = {
       'amount': amount,
     };
@@ -77,6 +79,7 @@ Future<Map<String, dynamic>?> createVA(int amount, BuildContext context) async {
 
 Future<void> simulateVAPayment(String externalId, int vaAmount) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     print("$externalId - $vaAmount");
     final url = '${ApiConfig().baseUrl}/xendit/simulate-va-payment';
     final response = await http.post(
@@ -102,6 +105,7 @@ Future<void> simulateVAPayment(String externalId, int vaAmount) async {
 void createInvoice(String external_id, int amount, String payer_email,
     String description, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final InvoiceData = {
       'external_id': external_id,
       'amount': amount,
@@ -136,6 +140,7 @@ Future<Map<String, dynamic>?> addTrans(
   double grand_total,
   BuildContext context,
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   // change the timezone here for transaction
@@ -200,6 +205,7 @@ Future<Map<String, dynamic>?> addTrans(
 
 //show alltrans in cabang
 Future<List<Map<String, dynamic>>> getTrans() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final request =
@@ -223,6 +229,7 @@ Future<Map<String, dynamic>?> addDelivery(
   String transaksi_id,
   BuildContext context,
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   try {
@@ -263,6 +270,7 @@ Future<Map<String, dynamic>> generateInvoice(
     List<Map<String, dynamic>> items,
     BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final DateFormat formatter = DateFormat('yyyy-MM-ddTHH:mm:ss');
     String dateinvoice = formatter.format(date_trans);
     final response = await http.post(
@@ -304,6 +312,7 @@ Future<Map<String, dynamic>> generateInvoice(
 
 Future<bool> sendInvoiceByEmail(
     String invoicePath, String receiverEmail, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final Uri uri = Uri.parse('${ApiConfig().baseUrl}/invoice/invoice-email');
   try {
     final response = await http.post(
@@ -328,9 +337,11 @@ Future<bool> sendInvoiceByEmail(
       return false;
     }
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error occurred while sending invoice: $e")),
-    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error occurred: $e")),
+      );
+    }
     return false;
   }
 }

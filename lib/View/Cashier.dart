@@ -28,6 +28,7 @@ class Cashier extends StatefulWidget {
 class _CashierState extends State<Cashier> {
   static const int itemsPerPage = 6;
   int currentPage = 0;
+  int totalPages = 1;
   List<Barang> _items = [];
   List<Barang> _displayedItems = [];
   List<CartItem> _cartItems = [];
@@ -114,15 +115,19 @@ class _CashierState extends State<Cashier> {
   }
 
   void _updateDisplayedItems([String query = '']) {
+    List<Barang> filteredItems = _allItems.where((item) {
+      return item.nama_barang.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+
+    totalPages = (filteredItems.length / itemsPerPage).ceil();
+    currentPage = currentPage.clamp(0, totalPages - 1);
+
+    int start = currentPage * itemsPerPage;
+    int end = start + itemsPerPage;
+    if (end > filteredItems.length) end = filteredItems.length;
+
     setState(() {
-      _displayedItems = _allItems.where((item) {
-        return item.nama_barang.toLowerCase().contains(query.toLowerCase());
-      }).toList();
-      int totalPages = (_displayedItems.length / itemsPerPage).ceil();
-      _displayedItems = _displayedItems
-          .skip(currentPage * itemsPerPage)
-          .take(itemsPerPage)
-          .toList();
+      _displayedItems = filteredItems.sublist(start, end);
     });
   }
 
@@ -251,25 +256,30 @@ class _CashierState extends State<Cashier> {
                               childAspectRatio: 1,
                               children:
                                   _displayedItems.asMap().entries.map((entry) {
-                                int index = 0;
+                                int index = entry
+                                    .key; // ini indeks lokal halaman (0..itemsPerPage-1)
                                 Barang item = entry.value;
+
                                 return ItemCard(
-                                  item: item,
-                                  satuanIndex:
-                                      index, // Pass the index to ItemCard
-                                  onPressed: () async {
-                                    List<Map<String, dynamic>> satuanData =
-                                        await getsatuan(item.id, context);
-                                    setState(() {
-                                      _handleItemPressed(
-                                          satuanData, item, index);
-                                      _updateSubtotal();
+                                    item: item,
+                                    satuanIndex: index,
+                                    onPressed: () async {
+                                      List<Map<String, dynamic>> satuanData =
+                                          await getsatuan(item.id, context);
+                                      if (satuanData.isEmpty) {
+                                        showToast(
+                                            context, "Satuan tidak ditemukan");
+                                        return;
+                                      }
+                                      setState(() {
+                                        _handleItemPressed(satuanData, item, 0);
+                                        _updateSubtotal();
+                                      });
                                     });
-                                  },
-                                );
                               }).toList(),
                             ),
                           ),
+
                           // Page navigation
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -280,6 +290,7 @@ class _CashierState extends State<Cashier> {
                                     ? () {
                                         setState(() {
                                           currentPage--;
+                                          _updateDisplayedItems();
                                         });
                                       }
                                     : null,
@@ -291,6 +302,7 @@ class _CashierState extends State<Cashier> {
                                     ? () {
                                         setState(() {
                                           currentPage++;
+                                          _updateDisplayedItems();
                                         });
                                       }
                                     : null,

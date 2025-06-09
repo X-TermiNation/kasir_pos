@@ -9,7 +9,6 @@ class ApiConfig {
 
   final String _localUrl = "http://10.0.2.2:3000";
   final String _railwayUrl = "https://serverpos-production.up.railway.app";
-
   String _baseUrl = "http://10.0.2.2:3000";
   String get baseUrl => _baseUrl;
 
@@ -46,6 +45,10 @@ class ApiConfig {
     _timer = Timer.periodic(const Duration(minutes: 5), (_) {
       _checkInternetAndSwitch();
     });
+  }
+
+  Future<void> refreshConnectionIfNeeded() async {
+    await _checkInternetAndSwitch();
   }
 
   void dispose() {

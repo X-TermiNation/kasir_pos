@@ -356,12 +356,9 @@ class _HistoryPageState extends State<HistoryPage> {
                                         String utcDateString) {
                                       DateTime utcDate =
                                           DateTime.parse(utcDateString);
-                                      final zone =
-                                          tz.getLocation('Asia/Jakarta');
-                                      tz.TZDateTime timezoneDate =
-                                          tz.TZDateTime.from(utcDate, zone);
+                                      ;
                                       return DateFormat('dd/MM/yy HH:mm')
-                                          .format(timezoneDate);
+                                          .format(utcDate);
                                     }
 
                                     return DataRow(cells: [

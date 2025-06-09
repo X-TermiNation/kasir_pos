@@ -8,6 +8,7 @@ import 'dart:async';
 import '../api_config.dart';
 
 Future<List<Map<String, dynamic>>> getallcabang() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/cabang/showAllcabang';
   final response = await http.get(Uri.parse(url));
   if (response.body.isEmpty) {
@@ -20,6 +21,7 @@ Future<List<Map<String, dynamic>>> getallcabang() async {
 
 //delete cabang
 void deletecabang(String id, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/cabang/delete/$id';
   final response = await http.delete(Uri.parse(url));
   if (response.statusCode == 200) {
@@ -34,6 +36,7 @@ void deletecabang(String id, BuildContext context) async {
 }
 
 Future<String> getdatacabang(String email) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/user/cariUserbyEmail/$email';
   final response = await http.get(Uri.parse(url));
   // Check the response status code
@@ -56,6 +59,7 @@ Future<String> getdatacabang(String email) async {
 }
 
 Future<List<Map<String, dynamic>>> getdatacabangByID(String id) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/cabang/caricabangbyID/$id';
   final response = await http.get(Uri.parse(url));
 

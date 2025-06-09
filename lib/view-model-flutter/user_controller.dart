@@ -11,6 +11,7 @@ String idcabangglobal = "";
 
 //verify
 Future<void> verify() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   String uriString = "${ApiConfig().baseUrl}/user/verify";
   Uri uri = Uri.parse(uriString);
   final response = await http.get(uri);
@@ -18,6 +19,7 @@ Future<void> verify() async {
 
 //get user
 Future<List<Map<String, dynamic>>> getUsers() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
   final request = Uri.parse('${ApiConfig().baseUrl}/user/list/$id_cabangs');
@@ -33,6 +35,7 @@ Future<List<Map<String, dynamic>>> getUsers() async {
 //print data user
 Future<void> fetchData() async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final items = await getUsers();
     print("ini data :$items");
   } catch (error) {
@@ -43,6 +46,7 @@ Future<void> fetchData() async {
 //login
 Future<int> loginbtn(String email, String pass) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     String uriString = "${ApiConfig().baseUrl}/user/loginkasir";
     Uri uri = Uri.parse(uriString);
     final response = await http.post(
@@ -77,6 +81,7 @@ Future<int> loginbtn(String email, String pass) async {
 
 void tambahOwner(String email, String pass, String fname, String lname) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final Owneradd = {
       'email': email,
       'password': pass,
@@ -110,6 +115,7 @@ void tambahOwner(String email, String pass, String fname, String lname) async {
 void tambahpegawai(
     String email, String pass, String fname, String lname, String role) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final useradd = {
       'email': email,
       'password': pass,
@@ -144,6 +150,7 @@ void tambahpegawai(
 
 //delete user
 void deleteuser(String id, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = '${ApiConfig().baseUrl}/user/deleteuser/$id/$id_cabang';
@@ -162,6 +169,7 @@ void deleteuser(String id, BuildContext context) async {
 //update user
 void UpdateUser(String fname, String lname, String role, String id,
     BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final updatedUserData = {
     'fname': fname.toString(),
     'lname': lname.toString(),

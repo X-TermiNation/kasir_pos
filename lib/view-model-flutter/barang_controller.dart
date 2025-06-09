@@ -10,6 +10,7 @@ import '../api_config.dart';
 //add barang
 void addbarang(DateTime insertedDate, bool noExp, String nama_barang,
     String katakategori, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   try {
@@ -57,6 +58,7 @@ void addbarang(DateTime insertedDate, bool noExp, String nama_barang,
 
 //get barang
 Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final request = Uri.parse(
@@ -75,6 +77,7 @@ Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
 
 //delete barang
 void deletebarang(String id) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   final id_cabang = dataStorage.read("id_cabang");
   final id_gudang = dataStorage.read("id_gudang");
@@ -91,6 +94,7 @@ void deletebarang(String id) async {
 //update barang
 void UpdateBarang(String id, String nama_barang, String katakategori,
     String harga_barang, String jumlah_barang) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final updatedBarangData = {
     'nama_barang': nama_barang,
     'kategori_barang': katakategori,
@@ -129,6 +133,7 @@ void UpdateBarang(String id, String nama_barang, String katakategori,
 void addkategori(String nama_kategori, String selectedvalueJenis,
     BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final Kategoridata = {
       'nama_kategori': nama_kategori,
       'id_jenis': selectedvalueJenis,
@@ -158,6 +163,7 @@ void addkategori(String nama_kategori, String selectedvalueJenis,
 
 //get kategori
 Future<List<Map<String, dynamic>>> getKategori() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/barang/getkategori';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
@@ -171,6 +177,7 @@ Future<List<Map<String, dynamic>>> getKategori() async {
 }
 
 Future<String> getFirstKategoriId() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/barang/getfirstkategori';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
@@ -199,6 +206,7 @@ Future<String> getFirstKategoriId() async {
 
 Future<void> fetchDataKategori() async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final items = await getKategori();
     print("ini data Kategori :$items");
   } catch (error) {
@@ -208,6 +216,7 @@ Future<void> fetchDataKategori() async {
 
 Future<Map<String, String>> getNamaKategoriMap(
     List<Map<String, dynamic>> array) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final map = Map<String, String>();
   final objects = await array;
   for (final object in objects) {
@@ -217,6 +226,7 @@ Future<Map<String, String>> getNamaKategoriMap(
 }
 
 Future<Map<String, String>> getmapkategori() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final Kategori = await getKategori();
   final namaKategoriMap = await getNamaKategoriMap(Kategori);
   print(namaKategoriMap);
@@ -227,6 +237,7 @@ Future<Map<String, String>> getmapkategori() async {
 
 //add jenis
 void addjenis(String nama_jenis, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final Jenisdata = {
     'nama_jenis': nama_jenis,
   };
@@ -246,6 +257,7 @@ void addjenis(String nama_jenis, BuildContext context) async {
 }
 
 Future<List<Map<String, dynamic>>> getJenis() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/barang/getjenis';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
@@ -259,6 +271,7 @@ Future<List<Map<String, dynamic>>> getJenis() async {
 }
 
 Future<String> getFirstJenisId() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = '${ApiConfig().baseUrl}/barang/getfirstjenis';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
@@ -281,6 +294,7 @@ Future<String> getFirstJenisId() async {
 
 Future<void> fetchDatajenis() async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final items = await getJenis();
     print("ini data Kategori :$items");
   } catch (error) {
@@ -290,6 +304,7 @@ Future<void> fetchDatajenis() async {
 
 Future<Map<String, String>> getNamaJenisMap(
     List<Map<String, dynamic>> array) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final map = Map<String, String>();
   final objects = await array;
   for (final object in objects) {
@@ -300,6 +315,7 @@ Future<Map<String, String>> getNamaJenisMap(
 
 Future<Map<String, Map<String, dynamic>>> getMapFromjenis(
     List<Map<String, dynamic>> list) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final map = <String, Map<String, dynamic>>{};
 
   for (final item in list) {
@@ -313,6 +329,7 @@ Future<Map<String, Map<String, dynamic>>> getMapFromjenis(
 }
 
 Future<Map<String, String>> getmapjenis() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final Jenis = await getJenis();
   final namaJenismap = await getNamaJenisMap(Jenis);
   print(namaJenismap);
@@ -323,6 +340,7 @@ Future<Map<String, String>> getmapjenis() async {
 void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
     String harga_satuan, String isi_satuan, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final satuandata = {
       'nama_satuan': nama_satuan,
       'jumlah_satuan': jumlah_satuan,
@@ -362,6 +380,7 @@ void updatejumlahSatuan(
   BuildContext context,
 ) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     if (kodeAktivitas != "" && action == 'kurang') {
       // Insert re-stock history before updating stock quantity
       await insertHistoryStok(
@@ -407,6 +426,7 @@ void updatejumlahSatuan(
 Future<List<Map<String, dynamic>>> getsatuan(
     String id_barang, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final dataStorage = GetStorage();
     final id_cabang = dataStorage.read("id_cabang");
     String id_gudangs = dataStorage.read('id_gudang');
@@ -437,6 +457,7 @@ Future<void> insertHistoryStok({
   required String Kode_Aktivitas,
   required String id_cabang,
 }) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final getstorage = GetStorage();
   final String? User_email = getstorage.read('email_login');
   final url = Uri.parse("${ApiConfig().baseUrl}/barang/insertHistoryStok");

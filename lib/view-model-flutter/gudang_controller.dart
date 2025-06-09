@@ -6,6 +6,7 @@ import '../api_config.dart';
 
 Future<void> getdatagudang() async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final dataStorage = GetStorage();
     String idcabang = dataStorage.read('id_cabang');
     final url = '${ApiConfig().baseUrl}/gudang/$idcabang';
